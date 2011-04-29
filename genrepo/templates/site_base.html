@@ -17,7 +17,8 @@ GenRepo Prototype
 {% load eulcore_tags %}
 
 {% block navbar-items %}
-{#    <li><a href="{% url collection:browse %}">Collections</a></li> #}
+  {# link to new collection for now, since that is all we have #}
+   <li><a href="{% url collections:new %}">Collections</a></li>
 {% endblock %}
 
 {% block content-header %}

@@ -7,3 +7,6 @@
 .sw-version {
     text-align: right
 }
+input[type='text'], textarea {
+    width: 100%;
+}

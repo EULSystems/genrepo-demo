@@ -5,4 +5,11 @@
      <a href="{% url accounts:login %}?next={% url site-index %}">Login</a>
  {% endif %}
  {{ block.super }}
+
+<div>
+<p>What would you like to do today?</p>
+<ul>
+  <li><a href="{% url collections:new %}">Create a new collection</a></li>
+</ul>
+</div>
 {% endblock %}

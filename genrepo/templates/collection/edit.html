@@ -1,0 +1,12 @@
+{% extends 'collection/base.html' %}
+
+{% block page-subtitle %}{{ block.super }} : Create{% endblock %}
+{% block content-body %}
+<h1>Create a new collection</h1>
+<form method="post">{% csrf_token %}
+  <table>
+    {{ form.as_table }}
+  </table>
+  <input type="submit" value="Save"/>
+</form>
+{% endblock %}

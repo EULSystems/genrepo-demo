@@ -13,6 +13,8 @@ urlpatterns = patterns('',
 
     # login/logout
     url(r'^accounts/', include('genrepo.accounts.urls', namespace='accounts')),
+    # collections
+    url(r'^collections/', include('genrepo.collection.urls', namespace='collections')),
                        
     # enable django db-admin
     (r'^db-admin/', include(admin.site.urls)),
