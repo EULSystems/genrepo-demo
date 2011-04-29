@@ -1,17 +1,13 @@
 from django.conf.urls.defaults import *
+from django.contrib import admin
 
-# Uncomment the next two lines to enable the admin:
-# from django.contrib import admin
-# admin.autodiscover()
+# auto discover models that should be available for db admin
+admin.autodiscover()
 
 urlpatterns = patterns('',
     # Example:
     # (r'^genrepo/', include('genrepo.foo.urls')),
 
-    # Uncomment the admin/doc line below and add 'django.contrib.admindocs' 
-    # to INSTALLED_APPS to enable admin documentation:
-    # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
-
-    # Uncomment the next line to enable the admin:
-    # (r'^admin/', include(admin.site.urls)),
+    # enable django db-admin
+    (r'^db-admin/', include(admin.site.urls)),
 )
