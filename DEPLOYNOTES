@@ -46,7 +46,7 @@ correspondingly be installed into this environment.
   you are already in an activated shell.
 
 Install python dependencies
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 FindingAids depends on several python libraries. If you are using pip, you can
 install all of the dependencies in an automated fashion that will print status
@@ -80,3 +80,53 @@ Known Issues
     $ ln -s src/python-eulcore/themes/
 
 -----
+
+Install/Configure System Dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Fedora
+""""""
+
+The Keep expects to connect to a Fedora-Commons repository version
+3.4.x.  Fedora should be configured as follows:
+
+*  LDAP login filter
+
+.. todo: document xacml policy setup required
+
+Install the Application
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Apache
+^^^^^^
+
+.. todo: create sample apache conf & wsgi
+
+Configuration
+^^^^^^^^^^^^^
+
+Configure application settings by copying **localsettings.py.sample**
+to **localsettings.py** and editing for local database, LDAP, Fedora,
+PID manager, and key configuration.
+
+PID Manager
+"""""""""""
+
+Commenting out or removing any of the PIDMAN_* configuration options will
+raise an error if the ``DEV_ENV`` setting is ``False`` (as is normal for a
+production install). 
+
+The configured PIDMAN_USER must have permission inside the pid
+manager to add pids and targets.
+
+----
+
+After configuring all settings, initialize the db with all needed
+tables and initial data using::
+
+    $ python manage.py syncdb
+
+Load Fedora fixtures and control objects to the configured repository
+using::
+
+     $ python manage.py syncrepo
