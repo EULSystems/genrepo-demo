@@ -69,7 +69,7 @@ documentation, you probably will also want to::
   $ pip install -r build-dependencies
 
 Known Issues
-""""""""""""
+^^^^^^^^^^^^
 
 * As of 04/2011, installing **python-eulcore** from SVN via pip does not
   install the eulcore template themes correctly.  The easiest way to fix
@@ -85,7 +85,7 @@ Install/Configure System Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Fedora
-""""""
+^^^^^^
 
 The Keep expects to connect to a Fedora-Commons repository version
 3.4.x.  Fedora should be configured as follows:
@@ -110,7 +110,7 @@ to **localsettings.py** and editing for local database, LDAP, Fedora,
 PID manager, and key configuration.
 
 PID Manager
-"""""""""""
+^^^^^^^^^^^
 
 Commenting out or removing any of the PIDMAN_* configuration options will
 raise an error if the ``DEV_ENV`` setting is ``False`` (as is normal for a
