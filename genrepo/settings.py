@@ -69,6 +69,7 @@ INSTALLED_APPS = (
     'eulcore.django.emory_ldap',
     'eulcore.django.fedora',
     'eulcore.django.testsetup',
+    'eulcore.django.util',
     'genrepo.accounts',
 )
 

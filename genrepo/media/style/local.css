@@ -1,0 +1,9 @@
+#logged-in {
+    float:right;
+}
+#logged-in a {
+    font-weight: bold;
+}
+.sw-version {
+    text-align: right
+}

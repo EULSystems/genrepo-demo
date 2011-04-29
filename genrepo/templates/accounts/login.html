@@ -1,0 +1,27 @@
+{% extends "site_base.html" %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script type="text/javascript">
+    $(document).ready(function() {
+      // move to the first text form element for user convenience
+      $('#login-form input[type="text"]').focus();
+    });
+  </script>
+{% endblock %}
+
+{% block content-body %}
+
+{% if form.errors %}
+<p>Your username and password didn't match. Please try again.</p>
+{% endif %}
+
+<form id="login-form" method="post" action="{% url accounts:login %}">{% csrf_token %}
+<table>
+    {{ form.as_table }}
+</table>
+<input type="submit" value="Login" />
+<input type="hidden" name="next" value="{{ next }}" />
+</form>
+
+{% endblock %}

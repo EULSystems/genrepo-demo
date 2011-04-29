@@ -1,0 +1,50 @@
+{% extends "genlib_templates/bluegray_site_base.xhtml" %}
+
+{% block page-title %}GenRepo {% block page-subtitle %}: Home{% endblock %}{% endblock %}
+
+{% block style %}
+    {{ block.super }}
+    {% comment %}Place Local changes, modifications and overrisdes in your local.css file.{% endcomment %}
+   <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}/style/local.css" />
+{% endblock %}
+
+{% block site-name %}
+{# <img id="logo" src="{{ MEDIA_URL }}/images/logo.png" /> #}
+GenRepo Prototype
+
+{% endblock %}
+{% block site-slogan %}{# ??? #}{% endblock %}
+{% load eulcore_tags %}
+
+{% block navbar-items %}
+{#    <li><a href="{% url collection:browse %}">Collections</a></li> #}
+{% endblock %}
+
+{% block content-header %}
+ {% if user.is_authenticated %}
+   <div id="logged-in">
+     <p>Welcome, <b>{% firstof user.first_name user.username %}</b>.
+        <a href="{% url accounts:logout %}">Logout</a></p>
+   </div>
+ {% endif %}
+ {{ block.super }}
+{% endblock %}
+
+{% block sidebar-left %}
+{% endblock %}
+
+{% block message %}
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|safe }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+{% endblock %}
+
+{% block content-outer-bottom %}
+  {% if SW_VERSION %}
+    <div class="sw-version dev-note">v{{ SW_VERSION }}</div>
+  {% endif %}
+{% endblock %}
