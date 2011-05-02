@@ -1,6 +1,18 @@
 from django.conf import settings
+from django.db.models import Model
 
 from eulcore.fedora.models import DigitalObject
+
+class Collection(Model):
+    '''Collection place-holder object to define Django permissions on
+    :class:`CollectionObject` . 
+    '''
+    class Meta:
+        permissions = (
+            # add, change, and delete are created by default
+            ("can_view", "Can view existing collections"),
+        )
+
 
 class CollectionObject(DigitalObject):
     """A Fedora CollectionObject.  Inherits the standard Dublin Core

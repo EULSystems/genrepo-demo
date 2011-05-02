@@ -4,7 +4,23 @@
         "model": "auth.group", 
         "fields": {
             "name": "Repository Editors", 
-            "permissions": []
+            "permissions": [
+                [
+                    "add_collection", 
+                    "collection", 
+                    "collection"
+                ], 
+                [
+                    "can_view", 
+                    "collection", 
+                    "collection"
+                ], 
+                [
+                    "change_collection", 
+                    "collection", 
+                    "collection"
+                ]
+            ]
         }
     }
 ]
