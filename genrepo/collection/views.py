@@ -10,35 +10,41 @@ from eulcore.fedora.util import RequestFailed, PermissionDenied
 from genrepo.collection.forms import CollectionDCEditForm
 from genrepo.collection.models import CollectionObject
 
-def create(request):
+def create_or_edit(request, pid=None):
     """View to create a new
-    :class:`~genrepo.collection.models.CollectionObject`.
+    :class:`~genrepo.collection.models.CollectionObject` or edit an
+    existing one.
 
     On GET, display the form.
     On POST, create a new Collection if the form is valid.
     """
     status_code = None
-    
-    # on GET, instantiate a new form with no data
+    repo = Repository()
+    # get the object (if pid is not None), or create a new instance
+    obj = repo.get_object(pid, type=CollectionObject)
+   
+    # on GET, instantiate the form with existing object data (if any)
     if request.method == 'GET':
-        form = CollectionDCEditForm()
+        form = CollectionDCEditForm(instance=obj.dc.content)
 
     # on POST, create a new collection object, update DC from form
     # data (if valid), and save
     elif request.method == 'POST':
-        repo = Repository()
-        obj = repo.get_object(type=CollectionObject)
         form = CollectionDCEditForm(request.POST, instance=obj.dc.content)
         if form.is_valid():
             form.update_instance()
             # also use dc:title as object label
             obj.label = obj.dc.content.title
             try:
+                if obj.exists:
+                    action = 'updated'
+                else:
+                    action = 'created new'
+                    
                 result = obj.save()
                 messages.success(request,
-            		'Successfully created new collection <b>%s</b>' % obj.pid)
-#            	'Successfully created new collection <a href="%s">%s</a>' % \
-#                 (reverse('collections:edit', args=[obj.pid]), obj.pid))
+            		'Successfully %s collection <a href="%s"><b>%s</b></a>' % \
+                         (action, reverse('collection:edit', args=[obj.pid]), obj.pid))
 
 		# maybe redirect to collection view page when we have one
                 # - and maybe return a 201 Created status code
@@ -55,7 +61,8 @@ def create(request):
                 status_code = rf.code
 
     # if form is not valid, fall through and re-render the form with errors
-    response = render_to_response('collection/edit.html', {'form': form},
+    response = render_to_response('collection/edit.html',
+            {'form': form, 'obj': obj},
             context_instance=RequestContext(request))
     # if a non-standard status code is set, set it in the response before returning
     if status_code is not None:

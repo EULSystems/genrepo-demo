@@ -37,6 +37,7 @@ class CollectionViewsTest(EulcoreTestCase):
                              % (expected, code, new_coll_url))
         self.assert_(isinstance(response.context['form'], CollectionDCEditForm),
                 "CollectionDCEditForm should be set in response context")
+        self.assertContains(response, 'Create a new collection')
 
         # test submitting incomplete/invalid data - should redisplay form with errors
         # title is required
@@ -123,3 +124,50 @@ class CollectionViewsTest(EulcoreTestCase):
             messages = [ str(msg) for msg in response.context['messages'] ]
             self.assert_("You don't have permission to create a collection"
                          in messages[0])
+
+    def test_edit(self):
+        # test editing an existing collection
+        obj = self.repo.get_object(type=CollectionObject)
+        obj.label = 'Genrepo test collection'
+        obj.dc.content.title = 'my test title'
+        obj.dc.content.description = 'this collection contains test content'
+        obj.save()
+        # append to list of pids to be cleaned up after the test
+        self.pids.append(obj.pid)
+        
+        # No login/credentials required for now  (TODO later)
+        
+        edit_coll_url = reverse('collection:edit', kwargs={'pid': obj.pid})
+
+        # on GET, form should be displayed
+        response = self.client.get(edit_coll_url)
+        expected, code = 200, response.status_code
+        self.assertEqual(code, expected, 'Expected %s but returned %s for %s'
+                             % (expected, code, edit_coll_url))
+        self.assert_(isinstance(response.context['form'], CollectionDCEditForm),
+                "CollectionDCEditForm should be set in response context")
+        self.assertEqual(response.context['form'].instance, obj.dc.content)
+        self.assertContains(response, 'Update %s' % obj.label)
+
+        # POST data and update object, verify in fedora
+        update_data = {
+            'title': 'new title',
+            'description': 'new description too'
+        }
+        response = self.client.post(edit_coll_url, update_data, follow=True)
+        # on success, should redirect with a message about the object
+        messages = [ str(msg) for msg in response.context['messages'] ]
+        self.assert_('Successfully updated collection' in messages[0],
+                     'successful collection update message displayed to user')
+        # get a fresh copy of the object to compare
+        updated_obj = self.repo.get_object(obj.pid, type=CollectionObject)
+        self.assertEqual(update_data['title'], updated_obj.dc.content.title,
+        	"posted title should be set in dc:title; expected '%s', got '%s'" % \
+                 (update_data['title'], updated_obj.dc.content.title))
+        self.assertEqual(update_data['description'], updated_obj.dc.content.description,
+                 "posted description should be set in dc:description; expected '%s', got '%s'" % \
+                 (update_data['description'], updated_obj.dc.content.description))
+        self.assertEqual(update_data['title'], updated_obj.label,
+                 "posted title should be set in object label; expected '%s', got '%s'" % \
+                 (update_data['title'], updated_obj.label))
+
