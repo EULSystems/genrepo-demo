@@ -48,7 +48,7 @@ correspondingly be installed into this environment.
 Install python dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-FindingAids depends on several python libraries. If you are using pip, you can
+Generic_Ingest depends on several python libraries. If you are using pip, you can
 install all of the dependencies in an automated fashion that will print status
 messages as packages are installed. If there are any errors, pip should display
 messages indicating the problem.
@@ -56,8 +56,16 @@ messages indicating the problem.
 To install python dependencies, cd into the repository checkout and::
 
   $ pip install -r pip-dependencies
+  
+.. Note:: 
+  If you get errors with the pip-dependencies you may need to:
+    Be aware of a known issue with python-magic:
+      http://waterhouse.library.emory.edu:8080/hudson/job/keep-1.0.x/javadoc/deploynotes.html#known-issues
+    Install these packages::
+      $ sudo apt-get install python-libxml2 python-lxml libxslt1-dev libxslt1.1 libxml2
+      $ sudo apt-get install python-ldap libldap2-dev libsasl2-dev
 
-FindingAids requires a SQL database, but the type does not matter,
+Generic_Ingest requires a SQL database, but the type does not matter,
 so this is not included in the pip-dependencies file.  You may want to
 pip install  ``MySQL-python`` or ``psycopg``, depending on the database you
 plan to use.
