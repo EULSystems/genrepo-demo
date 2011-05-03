@@ -6,6 +6,10 @@ from os import path
 # Django sets too many absolute paths.
 BASE_DIR = path.dirname(path.abspath(__file__))
 
+
+# Site base url, when not deployed at root url (e.g., '/genrepo' )
+SITE_URL_PREFIX = ''
+
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
 MEDIA_ROOT = path.join(BASE_DIR, 'media')
@@ -92,7 +96,7 @@ SESSION_COOKIE_SECURE = True  # mark cookie as secure, only transfer via HTTPS
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # using default django login url
-LOGIN_URL = '/accounts/login/'
+LOGIN_URL = SITE_URL_PREFIX = '/accounts/login/'
 
 AUTH_PROFILE_MODULE = 'emory_ldap.EmoryLDAPUserProfile'
 
