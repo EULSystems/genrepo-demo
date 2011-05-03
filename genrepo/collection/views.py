@@ -92,3 +92,21 @@ def _create_or_edit(request, pid=None):
         response.status_code = status_code
     return response
 
+@permission_required_with_403('collection.change_collection')
+def view(request, pid):
+    '''view an existing
+    :class:`~genrepo.collection.models.CollectionObject` identified by
+    pid.
+    '''
+    repo = Repository()
+    # get the object
+    try:
+        obj = repo.get_object(pid, type=CollectionObject)
+        return render_to_response('collection/view.html',
+            {'obj': obj}, context_instance=RequestContext(request))
+    except RequestFailed as rf:
+        if isinstance(rf, PermissionDenied):
+            msg = 'You don\'t have permission to view a collection in the repository.'
+        else:
+            msg = 'There was an error communicating with the repository.'
+        messages.error(request,msg + ' Please contact a site administrator.')
