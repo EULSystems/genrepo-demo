@@ -6,10 +6,19 @@
  {% endif %}
  {{ block.super }}
 
+{% if user.is_authenticated %}
 <div>
-<p>What would you like to do today?</p>
-<ul>
-  <li><a href="{% url collection:new %}">Create a new collection</a></li>
-</ul>
+  <p>What would you like to do today?</p>
+  {% if perms.collection %} {# revise as we add actions #}
+    <ul>
+      {% if perms.collection.add_collection %}
+      <li><a href="{% url collection:new %}">Create a new collection</a></li>
+      {% endif %}
+    </ul>
+  {% else %}
+    <p>Sorry, you don't have permission to do anything yet.</p>
+  {% endif %}
+  
 </div>
+{% endif %}
 {% endblock %}

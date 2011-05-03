@@ -1,0 +1,40 @@
+[
+    {
+        "pk": 1, 
+        "model": "auth.user", 
+        "fields": {
+            "username": "nobody", 
+            "first_name": "", 
+            "last_name": "", 
+            "is_active": true, 
+            "is_superuser": false, 
+            "is_staff": true, 
+            "last_login": "2011-05-03 10:20:47", 
+            "groups": [], 
+            "user_permissions": [], 
+            "password": "sha1$b15e7$68d7a3dc5e15b14f226f5c0ca47a930b4ea5f308", 
+            "email": "", 
+            "date_joined": "2011-05-02 18:12:38"
+        }
+    }, 
+    {
+        "pk": 2, 
+        "model": "auth.user", 
+        "fields": {
+            "username": "repoeditor", 
+            "first_name": "", 
+            "last_name": "", 
+            "is_active": true, 
+            "is_superuser": false, 
+            "is_staff": false, 
+            "last_login": "2011-05-03 10:29:49", 
+            "groups": [
+                1
+            ], 
+            "user_permissions": [], 
+            "password": "sha1$991ab$d12d72c30662a9ecc673b86b17ddf2f309cb4938", 
+            "email": "", 
+            "date_joined": "2011-05-03 10:29:49"
+        }
+    }
+]

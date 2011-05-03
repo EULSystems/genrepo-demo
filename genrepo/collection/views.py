@@ -1,22 +1,45 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import permission_required
 from django.core.urlresolvers import reverse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 
 from eulcore.django.fedora.server import Repository
+from eulcore.django.auth.decorators import permission_required_with_403
 from eulcore.django.http import HttpResponseSeeOtherRedirect
 from eulcore.fedora.util import RequestFailed, PermissionDenied
 
 from genrepo.collection.forms import CollectionDCEditForm
 from genrepo.collection.models import CollectionObject
 
-def create_or_edit(request, pid=None):
+@permission_required_with_403('collection.add_collection')
+def create(request):
+    '''Create a new :class:`~genrepo.collection.models.CollectionObject`.
+    
+    On GET, displays the form. On POST, creates a collection if the
+    form is valid.
+    '''
+    return _create_or_edit(request)
+
+@permission_required_with_403('collection.change_collection')
+def edit(request, pid):
+    '''Edit an existing
+    :class:`~genrepo.collection.models.CollectionObject` identified by
+    pid.
+
+    On GET, displays the edit form.  On POST, updates the collection
+    if the form is valid.
+    '''
+    return _create_or_edit(request, pid)
+
+def _create_or_edit(request, pid=None):
     """View to create a new
-    :class:`~genrepo.collection.models.CollectionObject` or edit an
+    :class:`~genrepo.collection.models.CollectionObject` or update an
     existing one.
 
-    On GET, display the form.
-    On POST, create a new Collection if the form is valid.
+    On GET, display the form.  When valid form data is POSTed, creates
+    a new collection (if pid is None) or updates an existing
+    collection.
     """
     status_code = None
     repo = Repository()

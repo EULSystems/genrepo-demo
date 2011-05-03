@@ -11,17 +11,20 @@
 {% endblock %}
 
 {% block content-body %}
+{% if user.is_authenticated %}
+   You are already logged in as <b>{{ user }}</b>.
+{% else %}
+  {% if form.errors %}
+    <p>Your username and password didn't match. Please try again.</p>
+  {% endif %}
 
-{% if form.errors %}
-<p>Your username and password didn't match. Please try again.</p>
-{% endif %}
-
-<form id="login-form" method="post" action="{% url accounts:login %}">{% csrf_token %}
-<table>
-    {{ form.as_table }}
-</table>
-<input type="submit" value="Login" />
-<input type="hidden" name="next" value="{{ next }}" />
-</form>
+  <form id="login-form" method="post" action="{% url accounts:login %}">{% csrf_token %}
+    <table>
+      {{ form.as_table }}
+    </table>
+    <input type="submit" value="Login" />
+    <input type="hidden" name="next" value="{{ next }}" />
+  </form>
+ {% endif %}
 
 {% endblock %}

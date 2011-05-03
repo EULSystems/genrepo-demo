@@ -12,7 +12,13 @@ from eulcore.fedora.util import RequestFailed, PermissionDenied
 from genrepo.collection.forms import CollectionDCEditForm
 from genrepo.collection.models import CollectionObject
 
+# users defined in users.json fixture
+ADMIN_CREDENTIALS = {'username': 'repoeditor', 'password': 'r3p03d'} # in repository editor group
+NONADMIN_CREDENTIALS = {'username': 'nobody', 'password': 'nobody'}  # no permissions
+
+
 class CollectionViewsTest(EulcoreTestCase):
+    fixtures =  ['users']
     repo = Repository()
 
     def setUp(self):
@@ -29,6 +35,24 @@ class CollectionViewsTest(EulcoreTestCase):
 
         # No login/credentials required for now  (TODO later)
         new_coll_url = reverse('collection:new')
+
+        # not logged in - should redirect to login page
+        response = self.client.get(new_coll_url)
+        code = response.status_code
+        expected = 302
+        self.assertEqual(code, expected, 'Expected %s but returned %s for %s as AnonymousUser'
+                             % (expected, code, new_coll_url))
+
+        # logged in as user without required permissions - should 403
+        self.client.login(**NONADMIN_CREDENTIALS)
+        response = self.client.get(new_coll_url)
+        code = response.status_code
+        expected = 403
+        self.assertEqual(code, expected, 'Expected %s but returned %s for %s as logged in non-repo editor'
+                             % (expected, code, new_coll_url))
+
+        # log in as repository editor for all other tests
+        self.client.login(**ADMIN_CREDENTIALS)
 
         # on GET, form should be displayed
         response = self.client.get(new_coll_url)
@@ -135,9 +159,25 @@ class CollectionViewsTest(EulcoreTestCase):
         # append to list of pids to be cleaned up after the test
         self.pids.append(obj.pid)
         
-        # No login/credentials required for now  (TODO later)
-        
         edit_coll_url = reverse('collection:edit', kwargs={'pid': obj.pid})
+
+        # not logged in - should redirect to login page
+        response = self.client.get(edit_coll_url)
+        code = response.status_code
+        expected = 302
+        self.assertEqual(code, expected, 'Expected %s but returned %s for %s as AnonymousUser'
+                             % (expected, code, edit_coll_url))
+
+        # logged in as user without required permissions - should 403
+        self.client.login(**NONADMIN_CREDENTIALS)
+        response = self.client.get(edit_coll_url)
+        code = response.status_code
+        expected = 403
+        self.assertEqual(code, expected, 'Expected %s but returned %s for %s as logged in non-repo editor'
+                             % (expected, code, edit_coll_url))
+
+        # log in as repository editor for all other tests
+        self.client.login(**ADMIN_CREDENTIALS)
 
         # on GET, form should be displayed
         response = self.client.get(edit_coll_url)
