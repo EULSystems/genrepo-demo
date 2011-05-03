@@ -100,13 +100,13 @@ def view(request, pid):
     '''
     repo = Repository()
     # get the object
-    try:
-        obj = repo.get_object(pid, type=CollectionObject)
-        return render_to_response('collection/view.html',
+#    try:
+    obj = repo.get_object(pid, type=CollectionObject)
+    return render_to_response('collection/view.html',
             {'obj': obj}, context_instance=RequestContext(request))
-    except RequestFailed as rf:
-        if isinstance(rf, PermissionDenied):
-            msg = 'You don\'t have permission to view a collection in the repository.'
-        else:
-            msg = 'There was an error communicating with the repository.'
-        messages.error(request,msg + ' Please contact a site administrator.')
+#    except RequestFailed as rf:
+#        if isinstance(rf, PermissionDenied):
+#            msg = 'You don\'t have permission to view a collection in the repository.'
+#        else:
+#            msg = 'There was an error communicating with the repository.'
+#        messages.error(request,msg + ' Please contact a site administrator.')

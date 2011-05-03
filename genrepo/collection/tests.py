@@ -211,3 +211,44 @@ class CollectionViewsTest(EulcoreTestCase):
                  "posted title should be set in object label; expected '%s', got '%s'" % \
                  (update_data['title'], updated_obj.label))
 
+    def test_view(self):
+       # test viewing an existing collection
+        obj = self.repo.get_object(type=CollectionObject)
+        obj.label = 'Genrepo test collection'
+        obj.dc.content.title = 'my test title for view'
+        obj.dc.content.description = 'this collection contains test content for view'
+        obj.save()
+        # append to list of pids to be cleaned up after the test
+        self.pids.append(obj.pid)
+
+        view_coll_url = reverse('collection:view', kwargs={'pid': obj.pid})
+
+        # not logged in - should redirect to login page
+        response = self.client.get(view_coll_url)
+        code = response.status_code
+        expected = 302
+        self.assertEqual(code, expected, 'Expected %s but returned %s for %s as AnonymousUser'
+                             % (expected, code, view_coll_url))
+
+        # logged in as user without required permissions - should 403
+        self.client.login(**NONADMIN_CREDENTIALS)
+        response = self.client.get(view_coll_url)
+        code = response.status_code
+        expected = 403
+        self.assertEqual(code, expected, 'Expected %s but returned %s for %s as logged in non-repo editor'
+                             % (expected, code, view_coll_url))
+
+       # logged in as user without required permissions - should 403
+        self.client.login(**ADMIN_CREDENTIALS)
+        response = self.client.get(view_coll_url)
+        code = response.status_code
+        expected = 200
+        self.assertEqual(code, expected, 'Expected %s but returned %s for %s as logged in non-repo editor'
+                             % (expected, code, view_coll_url))
+
+        expected = 'Genrepo test collection'
+        self.assertContains(response, expected, msg_prefix='could not find title of collection')
+
+        expected = 'this collection contains test content for view'
+        self.assertContains(response, expected, msg_prefix='could not find description of collection')
+
