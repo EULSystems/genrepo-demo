@@ -8,5 +8,6 @@ os.environ['VIRTUAL_ENV'] = '/home/httpd/genrepo/env/'
 # you pass the python-path option to WSGIDaemonProcess as described in the
 # sample config.
 
+
 from django.core.handlers.wsgi import WSGIHandler
 application = WSGIHandler()

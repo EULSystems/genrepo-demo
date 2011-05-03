@@ -108,7 +108,14 @@ Install the Application
 Apache
 ^^^^^^
 
-.. todo: create sample apache conf & wsgi
+When deployed under Apache, we recommend the use of mod WSGI.  On
+Ubuntu/Debian, you can install the apache2 modules with ``sudo apt-get
+install libapache2-mod-wsgi`` .
+
+After installing dependencies, copy and edit the sample wsgi and
+apache configuration files in the apache directory inside the source code
+checkout. Update all the paths to reflect the installation location
+for virtualenv and the checked out code.
 
 Configuration
 ^^^^^^^^^^^^^
