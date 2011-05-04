@@ -96,7 +96,7 @@ SESSION_COOKIE_SECURE = True  # mark cookie as secure, only transfer via HTTPS
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # using default django login url
-LOGIN_URL = SITE_URL_PREFIX = '/accounts/login/'
+LOGIN_URL = SITE_URL_PREFIX + '/accounts/login/'
 
 AUTH_PROFILE_MODULE = 'emory_ldap.EmoryLDAPUserProfile'
 
