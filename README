@@ -5,7 +5,7 @@ Overview
 --------
 
 This project is a prototype/demo Django web application for generic
-management of items (including ingest, metadata editing, etc.)  in a
+management of items (including ingest, metadata editing, etc.) in a
 Fedora repository.
 
 
@@ -19,7 +19,7 @@ Describe components here as we add them...
 System Dependencies
 -------------------
 
-findingaids requires the following network resources:
+generic-ingest requires the following network resources:
 
   * LDAP for user authentication
   * A relational database for user and session information
@@ -30,5 +30,3 @@ findingaids requires the following network resources:
 For more detailed information, including installation instructions and upgrade
 notes, see :ref:`DEPLOYNOTES`.  For details about the features included in each release,
 see :ref:`CHANGELOG`.
-
-
