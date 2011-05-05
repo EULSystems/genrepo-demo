@@ -1,6 +1,7 @@
 from mock import patch, Mock
 import re
-    
+
+from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.test import Client
 
@@ -52,7 +53,9 @@ class CollectionViewsTest(EulcoreTestCase):
                              % (expected, code, new_coll_url))
 
         # log in as repository editor for all other tests
-        self.client.login(**ADMIN_CREDENTIALS)
+        # NOTE: using admin view so user credentials will be used to access fedora
+        self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
+#        self.client.login(**ADMIN_CREDENTIALS)
 
         # on GET, form should be displayed
         response = self.client.get(new_coll_url)
@@ -98,6 +101,10 @@ class CollectionViewsTest(EulcoreTestCase):
         self.assertEqual(test_data['title'], new_obj.label,
                  "posted title should be set in object label; expected '%s', got '%s'" % \
                  (test_data['title'], new_obj.label))
+
+        # confirm that current site user appears in fedora audit trail
+        xml, uri = new_obj.api.getObjectXML(pid)
+        self.assert_('<audit:responsibility>%s</audit:responsibility>' % ADMIN_CREDENTIALS['username'] in xml)
 
         # simulate fedora errors with mock objects
 

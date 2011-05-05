@@ -5,6 +5,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 
 from eulcore.django.fedora.server import Repository
+from eulcore.fedora.models import DigitalObjectSaveFailure
 from eulcore.django.auth.decorators import permission_required_with_403
 from eulcore.django.http import HttpResponseSeeOtherRedirect
 from eulcore.fedora.util import RequestFailed, PermissionDenied
@@ -42,7 +43,7 @@ def _create_or_edit(request, pid=None):
     collection.
     """
     status_code = None
-    repo = Repository()
+    repo = Repository(request=request)
     # get the object (if pid is not None), or create a new instance
     obj = repo.get_object(pid, type=CollectionObject)
    
@@ -63,8 +64,10 @@ def _create_or_edit(request, pid=None):
                     action = 'updated'
                 else:
                     action = 'created new'
-                    
-                result = obj.save()
+
+                # save message must be specified in order for Fedora
+                # to generate & store an ingest audit trail event
+                result = obj.save('ingest via genrepo')
                 messages.success(request,
             		'Successfully %s collection <a href="%s"><b>%s</b></a>' % \
                          (action, reverse('collection:edit', args=[obj.pid]), obj.pid))
@@ -72,7 +75,8 @@ def _create_or_edit(request, pid=None):
 		# maybe redirect to collection view page when we have one
                 # - and maybe return a 201 Created status code
                 return HttpResponseSeeOtherRedirect(reverse('site-index'))
-            except RequestFailed as rf:
+            except (DigitalObjectSaveFailure, RequestFailed) as rf:
+                # do we need a different error message for DigitalObjectSaveFailure?
                 if isinstance(rf, PermissionDenied):
                     msg = 'You don\'t have permission to create a collection in the repository.'
                 else:
@@ -81,7 +85,7 @@ def _create_or_edit(request, pid=None):
                                msg + ' Please contact a site administrator.')
 
                 # pass the fedora error code back in the http response
-                status_code = rf.code
+                status_code = getattr(rf, 'code', None)
 
     # if form is not valid, fall through and re-render the form with errors
     response = render_to_response('collection/edit.html',
@@ -98,7 +102,7 @@ def view(request, pid):
     :class:`~genrepo.collection.models.CollectionObject` identified by
     pid.
     '''
-    repo = Repository()
+    repo = Repository(request=request)
     # get the object
 #    try:
     obj = repo.get_object(pid, type=CollectionObject)
