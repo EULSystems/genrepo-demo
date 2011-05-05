@@ -230,32 +230,30 @@ class CollectionViewsTest(EulcoreTestCase):
 
         view_coll_url = reverse('collection:view', kwargs={'pid': obj.pid})
 
-        # not logged in - should redirect to login page
+        # not logged in - public access content only for now, should
+        # be accessible to anyone
         response = self.client.get(view_coll_url)
         code = response.status_code
-        expected = 302
+        expected = 200
         self.assertEqual(code, expected, 'Expected %s but returned %s for %s as AnonymousUser'
                              % (expected, code, view_coll_url))
 
         # logged in as user without required permissions - should 403
-        self.client.login(**NONADMIN_CREDENTIALS)
-        response = self.client.get(view_coll_url)
-        code = response.status_code
-        expected = 403
-        self.assertEqual(code, expected, 'Expected %s but returned %s for %s as logged in non-repo editor'
-                             % (expected, code, view_coll_url))
-
-       # logged in as user without required permissions - should 403
-        self.client.login(**ADMIN_CREDENTIALS)
+        # NOTE: using admin view so user credentials will be used to access fedora
+        self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
         response = self.client.get(view_coll_url)
         code = response.status_code
         expected = 200
         self.assertEqual(code, expected, 'Expected %s but returned %s for %s as logged in non-repo editor'
                              % (expected, code, view_coll_url))
 
-        expected = 'Genrepo test collection'
-        self.assertContains(response, expected, msg_prefix='could not find title of collection')
+        self.assert_(isinstance(response.context['obj'], CollectionObject),
+                     'collection object should be set in response context')
+        self.assertEqual(obj.pid, response.context['obj'].pid,
+                         'correct collection object should be set in response context')
 
-        expected = 'this collection contains test content for view'
-        self.assertContains(response, expected, msg_prefix='could not find description of collection')
+        self.assertContains(response, obj.label,
+                            msg_prefix='response should include title of collection object')
+        self.assertContains(response, obj.dc.content.description,
+                            msg_prefix='response should include description of collection object')
 

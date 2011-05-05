@@ -2,14 +2,8 @@
 
 
 {% block content-body %}
-    <h1>
-        {% if obj.exists %}
-            {{ obj.label }}
-        {% endif %}
-    </h1>
-    {% if obj.exists %}
-      <p>Created {{ obj.created }}; last modified {{ obj.modified }}</p>
-      <p>{{ obj.dc.content.description }}</p>
-    {% endif %}
+    <h1>{{ obj.label }}</h1>
+    <p>Created {{ obj.created }}; last modified {{ obj.modified }}</p>
+    <p>{{ obj.dc.content.description }}</p>
 
 {% endblock %}

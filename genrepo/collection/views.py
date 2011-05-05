@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import permission_required
 from django.core.urlresolvers import reverse
+from django.http import Http404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 
@@ -96,21 +97,16 @@ def _create_or_edit(request, pid=None):
         response.status_code = status_code
     return response
 
-@permission_required_with_403('collection.change_collection')
 def view(request, pid):
     '''view an existing
     :class:`~genrepo.collection.models.CollectionObject` identified by
     pid.
     '''
     repo = Repository(request=request)
-    # get the object
-#    try:
     obj = repo.get_object(pid, type=CollectionObject)
+    # if the object does not exist or the current user doesn't have
+    # permission to see that it exists, 404
+    if not obj.exists:
+        raise Http404
     return render_to_response('collection/view.html',
             {'obj': obj}, context_instance=RequestContext(request))
-#    except RequestFailed as rf:
-#        if isinstance(rf, PermissionDenied):
-#            msg = 'You don\'t have permission to view a collection in the repository.'
-#        else:
-#            msg = 'There was an error communicating with the repository.'
-#        messages.error(request,msg + ' Please contact a site administrator.')
