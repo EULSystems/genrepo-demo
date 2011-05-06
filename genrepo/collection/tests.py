@@ -238,7 +238,7 @@ class CollectionViewsTest(EulcoreTestCase):
         self.assertEqual(code, expected, 'Expected %s but returned %s for %s as AnonymousUser'
                              % (expected, code, view_coll_url))
 
-        # logged in as user without required permissions - should 403
+        # logged in as user without required permissions - should still be accessible
         # NOTE: using admin view so user credentials will be used to access fedora
         self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
         response = self.client.get(view_coll_url)
@@ -247,6 +247,7 @@ class CollectionViewsTest(EulcoreTestCase):
         self.assertEqual(code, expected, 'Expected %s but returned %s for %s as logged in non-repo editor'
                              % (expected, code, view_coll_url))
 
+        # check for object display
         self.assert_(isinstance(response.context['obj'], CollectionObject),
                      'collection object should be set in response context')
         self.assertEqual(obj.pid, response.context['obj'].pid,
@@ -257,3 +258,12 @@ class CollectionViewsTest(EulcoreTestCase):
         self.assertContains(response, obj.dc.content.description,
                             msg_prefix='response should include description of collection object')
 
+        # non-existent object
+        view_coll_url = reverse('collection:view', kwargs={'pid': 'bogus:nonexistent-pid'})
+
+        response = self.client.get(view_coll_url)
+        code = response.status_code
+        expected = 404
+        self.assertEqual(code, expected, 'Expected %s but returned %s for %s (nonexistint object)'
+                             % (expected, code, view_coll_url))
+        
