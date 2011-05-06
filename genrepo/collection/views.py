@@ -110,3 +110,14 @@ def view(request, pid):
         raise Http404
     return render_to_response('collection/view.html',
             {'obj': obj}, context_instance=RequestContext(request))
+
+def list(request):
+    '''list all collections in repository returns list of
+    :class:`~genrepo.collection.models.CollectionObject`
+    '''
+    # get a list of collections in repo
+    colls = CollectionObject.all()
+    colls.sort( key=lambda coll : coll.label.upper()) # sort based in label
+        
+    return render_to_response('collection/list.html',
+            {'colls': colls}, context_instance=RequestContext(request))

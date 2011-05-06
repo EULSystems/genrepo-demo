@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db.models import Model
 
+from eulcore.django.fedora import Repository
 from eulcore.fedora.models import DigitalObject
 
 class AccessibleObject(DigitalObject):
@@ -34,3 +35,14 @@ class CollectionObject(DigitalObject):
 
     # use configured fedora pidspace (if any) when minting pids
     default_pidspace = getattr(settings, 'FEDORA_PIDSPACE', None)
+
+    @staticmethod
+    def all():
+        """
+        Returns all collections in the repository as
+        :class:`~genrepo.collection.models.CollectionObject`
+        """
+        repo = Repository()
+        colls = repo.get_objects_with_cmodel(CollectionObject.COLLECTION_CONTENT_MODEL, type=CollectionObject)
+        return colls
+
