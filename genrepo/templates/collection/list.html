@@ -7,17 +7,15 @@
   <ul>
   {% for coll in colls %}  
     {% fedora_access %}
-     <li>
-       <a href="{% url collection:view coll.pid %}">{{ coll.label|default:'[no title]' }}</a>
-       {% if perms.collection.change_collection %}
+      <li>
+        <a href="{% url collection:view coll.pid %}">{{ coll.label|default:'[no title]' }}</a>
+        {% if perms.collection.change_collection %}
           <a href="{% url collection:edit coll.pid %}">edit</a></p>
-       {% endif %}
-     </li>
-    {% permission_denied %}
-    {% fedora_failed %}
+        {% endif %}
+      </li>
     {% end_fedora_access %}
   {% empty %}
-   <li>No collections found.</li>
+    <li>No collections found.</li>
   {% endfor %}
   </ul>
 {% endblock %}
