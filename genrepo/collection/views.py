@@ -2,7 +2,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import permission_required
 from django.core.urlresolvers import reverse
 from django.http import Http404
-from django.shortcuts import render_to_response
 from django.template import RequestContext
 
 from eulcore.django.fedora.server import Repository
@@ -13,6 +12,7 @@ from eulcore.fedora.util import RequestFailed, PermissionDenied
 
 from genrepo.collection.forms import CollectionDCEditForm
 from genrepo.collection.models import CollectionObject
+from genrepo.util import render_to_response, accessible
 
 @permission_required_with_403('collection.add_collection')
 def create_collection(request):
@@ -90,8 +90,7 @@ def _create_or_edit_collection(request, pid=None):
 
     # if form is not valid, fall through and re-render the form with errors
     response = render_to_response('collection/edit.html',
-            {'form': form, 'obj': obj},
-            context_instance=RequestContext(request))
+            {'form': form, 'obj': obj}, request=request)
     # if a non-standard status code is set, set it in the response before returning
     if status_code is not None:
         response.status_code = status_code
@@ -109,26 +108,15 @@ def view_collection(request, pid):
     if not obj.exists:
         raise Http404
     return render_to_response('collection/view.html',
-            {'obj': obj}, context_instance=RequestContext(request))
+            {'obj': obj}, request=request)
 
 def list_collections(request):
     '''list all collections in repository returns list of
     :class:`~genrepo.collection.models.CollectionObject`
     '''
     colls = CollectionObject.all()
-    colls = list(_filter_accessible(colls))
+    colls = list(accessible(colls))
     colls.sort(key=lambda coll: coll.label.upper()) # sort based on label
 
     return render_to_response('collection/list.html',
-            {'colls': colls}, context_instance=RequestContext(request))
-
-
-def _filter_accessible(clist):
-    '''Iterate through an input collection list, and yield only those that
-    exist and don't throw Fedora exceptions.'''
-    for coll in clist:
-        try:
-            if coll.exists:
-                yield coll
-        except RequestFailed:
-            pass
+            {'colls': colls}, request=request)

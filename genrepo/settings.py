@@ -76,6 +76,7 @@ INSTALLED_APPS = (
     'eulcore.django.util',
     'genrepo.accounts',
     'genrepo.collection',
+    'genrepo.ingest',
 )
 
 
