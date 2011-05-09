@@ -62,7 +62,7 @@ should extend either of the genlib themes). {% endcomment %}
             {% endblock %}
         </div>
         {% endif %}
-{{ block.super }}   {# comment this out if it conflicts/overlaps with your base site #}
+{#{{ block.super }}#}   {# suppress duplicate logout/username info #}
 {% endblock %}
 
 {% block content-body %}

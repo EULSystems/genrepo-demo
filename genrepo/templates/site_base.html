@@ -11,23 +11,30 @@
 {% block site-name %}
 {# <img id="logo" src="{{ MEDIA_URL }}/images/logo.png" /> #}
 GenRepo Prototype
-
 {% endblock %}
 {% block site-slogan %}{# ??? #}{% endblock %}
 {% load eulcore_tags %}
 
-{% block navbar-items %}
-  {# link to new collection for now, since that is all we have #}
-   <li><a href="{% url collection:list %}">Collections</a></li>
+{# extend entire navbar instead of just navbar-items to customize activebase urls #}
+{% block navbar %}
+<ul>
+  <li><a href="{% url site-index %}" class="first {% if request %}{% activebase request '^/$' %}{% endif %}">Home</a></li>
+  <li><a href="{% url collection:list %}" 
+     class="{% if request %}{% activebase request '^/collections/' %}{% endif %}">Collections</a></li>
+  {% if user.is_staff %}
+    <li><a href="{% url admin:index %}"
+           class="{% if request %}{% activebase request '^/db-admin/' %}{% endif %}">Admin</a></li
+ {% endif %}
+</ul>
 {% endblock %}
 
 {% block content-header %}
- {% if user.is_authenticated %}
-   <div id="logged-in">
-     <p>Welcome, <b>{% firstof user.first_name user.username %}</b>.
-        <a href="{% url accounts:logout %}">Logout</a></p>
-   </div>
- {% endif %}
+   {% if user.is_authenticated %}
+     <div id="logged-in">
+      <p>Welcome, <b>{% firstof user.first_name user.username %}</b>.
+         <a href="{% url accounts:logout %}">Logout</a></p>
+    </div>
+   {% endif %}
  {{ block.super }}
 {% endblock %}
 
