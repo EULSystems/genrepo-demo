@@ -1,9 +1,13 @@
 {% extends 'collection/base.html' %}
 
+{% block page-subtitle %}{{ block.super }} : {{ obj.label }} {% endblock %}
+{% block content-title %}{{ obj.label }}{% endblock %}
 
 {% block content-body %}
-    <h1>{{ obj.label }}</h1>
     <p>Created {{ obj.created }}; last modified {{ obj.modified }}</p>
-    <p>{{ obj.dc.content.description }}</p>
+    <p>{{ obj.dc.content.description|default:'' }}</p>
 
+    {% if perms.collection.change_collection %}
+       <p><a href="{% url collection:edit obj.pid %}">edit</a></p>
+    {% endif %}
 {% endblock %}

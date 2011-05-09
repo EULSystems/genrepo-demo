@@ -29,12 +29,15 @@ GenRepo Prototype
 {% endblock %}
 
 {% block content-header %}
+  <div id="logged-in">
    {% if user.is_authenticated %}
-     <div id="logged-in">
       <p>Welcome, <b>{% firstof user.first_name user.username %}</b>.
          <a href="{% url accounts:logout %}">Logout</a></p>
-    </div>
+   {% else %}
+     <a href="{% url accounts:login %}?next={% url site-index %}">Login</a>
    {% endif %}
+  </div> 
+
  {{ block.super }}
 {% endblock %}
 

@@ -117,7 +117,9 @@ def list(request):
     '''
     # get a list of collections in repo
     colls = CollectionObject.all()
-    colls.sort( key=lambda coll : coll.label.upper()) # sort based in label
+    # NOTE: suppressing sorting for now;
+    # sorting here might be a good idea, but require handling fedora permission errors
+    #    colls.sort( key=lambda coll : coll.label.upper()) # sort based in label
         
     return render_to_response('collection/list.html',
             {'colls': colls}, context_instance=RequestContext(request))
