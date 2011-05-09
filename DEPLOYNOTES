@@ -124,6 +124,12 @@ Configure application settings by copying **localsettings.py.sample**
 to **localsettings.py** and editing for local database, LDAP, Fedora,
 PID manager, and key configuration.
 
+.. NOTE::
+
+  By default, this application should access the configured Fedora
+  repository with **no** credentials, so **FEDORA_USER** and
+  **FEDORA_PASSWORD** should not be defined in localsettings.py.  
+
 PID Manager
 ^^^^^^^^^^^
 
@@ -145,3 +151,27 @@ Load Fedora fixtures and control objects to the configured repository
 using::
 
      $ python manage.py syncrepo
+
+Notes for Developers
+~~~~~~~~~~~~~~~~~~~~
+
+The project default Session configuration is set to mark cookies as
+secure.  To enable login over HTTP (e.g. when developing with Django's
+runserver), you will need to override this in your
+``localsettings.py``.  See the commented out example in
+``localsettings.py.sample``.
+
+Test Setup
+^^^^^^^^^^
+
+Certain unit tests pass test user credentials to Fedora, in order to
+test and simulate accessing Fedora as the logged in user.  For tests
+to work properly, the unit test user should be defined (with
+appropriate permissions) as a fedora account.  See
+:mod:`genrepo.collection.tests` for account details.
+
+Since the site is configured to access Fedora as a guest (no
+credentials) by default, you should configure a Fedora test account
+that has permission to load and remove test fixtures via
+**FEDORA_TEST_USER** and **FEDORA_TEST_PASS** in ``localsettings.py``
+and make use of these settings in your local tests where necessary.

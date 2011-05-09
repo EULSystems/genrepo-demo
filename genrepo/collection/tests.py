@@ -14,13 +14,20 @@ from genrepo.collection.forms import CollectionDCEditForm
 from genrepo.collection.models import CollectionObject
 
 # users defined in users.json fixture
-ADMIN_CREDENTIALS = {'username': 'repoeditor', 'password': 'r3p03d'} # in repository editor group
-NONADMIN_CREDENTIALS = {'username': 'nobody', 'password': 'nobody'}  # no permissions
+ADMIN_CREDENTIALS = {'username': 'repoeditor', 'password': 'r3p03d'} 
+# in repository editor group
+# NOTE: this user should be defined as a test fedora user & be added to the genrepo xacml policy
+NONADMIN_CREDENTIALS = {'username': 'nobody', 'password': 'nobody'}  
+# no permissions
 
 
 class CollectionViewsTest(EulcoreTestCase):
     fixtures =  ['users']
+    # repository with default access (no credentials)
     repo = Repository()
+    # repository with test credentials for loading & removing test objects
+    repo_admin = Repository(username=getattr(settings, 'FEDORA_TEST_USER', None),
+                            password=getattr(settings, 'FEDORA_TEST_PASSWORD', None))
 
     def setUp(self):
         self.client = Client()
@@ -29,7 +36,7 @@ class CollectionViewsTest(EulcoreTestCase):
     def tearDown(self):
         # purge any objects created by individual tests
         for pid in self.pids:
-            self.repo.purge_object(pid)
+            self.repo_admin.purge_object(pid)
 
     def test_create(self):
         # test creating a collection object
@@ -55,7 +62,6 @@ class CollectionViewsTest(EulcoreTestCase):
         # log in as repository editor for all other tests
         # NOTE: using admin view so user credentials will be used to access fedora
         self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
-#        self.client.login(**ADMIN_CREDENTIALS)
 
         # on GET, form should be displayed
         response = self.client.get(new_coll_url)
@@ -88,8 +94,9 @@ class CollectionViewsTest(EulcoreTestCase):
         pid = pidmatch.group(1) # first parenthesized subgroup
         # append to list of pids to be cleaned up after the test
         self.pids.append(pid)
-        
-        new_obj = self.repo.get_object(pid, type=CollectionObject)
+
+        # inspect object - use repo_admin so we can access it
+        new_obj = self.repo_admin.get_object(pid, type=CollectionObject)
         self.assertTrue(new_obj.has_requisite_content_models,
                  'new object was created with the expected content models for a CollectionObject')
         self.assertEqual(test_data['title'], new_obj.dc.content.title,
@@ -158,7 +165,7 @@ class CollectionViewsTest(EulcoreTestCase):
 
     def test_edit(self):
         # test editing an existing collection
-        obj = self.repo.get_object(type=CollectionObject)
+        obj = self.repo_admin.get_object(type=CollectionObject)
         obj.label = 'Genrepo test collection'
         obj.dc.content.title = 'my test title'
         obj.dc.content.description = 'this collection contains test content'
@@ -176,7 +183,7 @@ class CollectionViewsTest(EulcoreTestCase):
                              % (expected, code, edit_coll_url))
 
         # logged in as user without required permissions - should 403
-        self.client.login(**NONADMIN_CREDENTIALS)
+        self.client.post(settings.LOGIN_URL, NONADMIN_CREDENTIALS)
         response = self.client.get(edit_coll_url)
         code = response.status_code
         expected = 403
@@ -184,7 +191,7 @@ class CollectionViewsTest(EulcoreTestCase):
                              % (expected, code, edit_coll_url))
 
         # log in as repository editor for all other tests
-        self.client.login(**ADMIN_CREDENTIALS)
+        self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
 
         # on GET, form should be displayed
         response = self.client.get(edit_coll_url)
@@ -207,7 +214,7 @@ class CollectionViewsTest(EulcoreTestCase):
         self.assert_('Successfully updated collection' in messages[0],
                      'successful collection update message displayed to user')
         # get a fresh copy of the object to compare
-        updated_obj = self.repo.get_object(obj.pid, type=CollectionObject)
+        updated_obj = self.repo_admin.get_object(obj.pid, type=CollectionObject)
         self.assertEqual(update_data['title'], updated_obj.dc.content.title,
         	"posted title should be set in dc:title; expected '%s', got '%s'" % \
                  (update_data['title'], updated_obj.dc.content.title))
@@ -219,8 +226,8 @@ class CollectionViewsTest(EulcoreTestCase):
                  (update_data['title'], updated_obj.label))
 
     def test_view(self):
-       # test viewing an existing collection
-        obj = self.repo.get_object(type=CollectionObject)
+        # test viewing an existing collection
+        obj = self.repo_admin.get_object(type=CollectionObject)
         obj.label = 'Genrepo test collection'
         obj.dc.content.title = 'my test title for view'
         obj.dc.content.description = 'this collection contains test content for view'
