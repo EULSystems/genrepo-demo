@@ -1,15 +1,8 @@
 {% extends "admin/base.html" %}
 {% load i18n %}
 
-{% block title %}GenRepo Prototype{% endblock %}
+{% block title %}: Django Admin{% endblock %}
 
 {% block branding %}
-<h1 id="site-name">GenRepo Prototype</h1>
-{% endblock %}
-
-{% block nav-global %}
-<ul>
-   <li><a href="{% url site-index %}">Site Home</a></li>  
-   <li><a href="{% url collection:new %}">Collections</a></li>
-</ul>
+<p style="font-size:80%">Django DB Administration</p>
 {% endblock %}

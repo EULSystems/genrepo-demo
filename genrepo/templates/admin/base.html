@@ -1,0 +1,111 @@
+{% extends "site_base.html" %}
+{% comment %} This template is an attempt to harmonize the Django 1.2 contrib admin site
+base template with the genlib theme(s).  To use it, you should copy
+this file into your templates directory admin/base.html and edit
+as necessary.  It should extend your local site base template (which
+should extend either of the genlib themes). {% endcomment %} 
+{% load i18n %}
+
+{% block style %}
+    {{ block.super }}
+  {# from django admin base template #}
+  <link rel="stylesheet" type="text/css" href="{% block stylesheet %}{% load adminmedia %}{% admin_media_prefix %}css/base.css{% endblock %}" />
+  {% block extrastyle %}{% endblock %}
+  <!--[if lte IE 7]><link rel="stylesheet" type="text/css" href="{% block stylesheet_ie %}{% load adminmedia %}{% admin_media_prefix %}css/ie.css{% endblock %}" /><![endif]-->
+  {% if LANGUAGE_BIDI %}<link rel="stylesheet" type="text/css" href="{% block stylesheet_rtl %}{% admin_media_prefix %}css/rtl.css{% endblock %}" />{% endif %}
+    <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}/genlib_media/style/admin_overrides.css" />
+{% endblock %}
+
+{% block scripts %}
+    {{ block.super }}
+    <script type="text/javascript">window.__admin_media_prefix__ = "{% filter escapejs %}{% admin_media_prefix %}{% endfilter %}";</script>
+{% endblock %}
+
+{% block page-head %}
+  {{ block.super }}
+  {% block extrahead %}{% endblock %}
+  {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}
+{% endblock %}
+
+{% block page-subtitle %}{% block title %}{% endblock %}{% endblock %}
+
+{% block body-class %}{{ block.super }}{% if is_popup %}popup {% endif %} 
+ {% block bodyclass %}{% endblock %}
+{% endblock %}
+
+{% block site-name %}{{ block.super }}{% block branding %}{% endblock %}{% endblock %}
+
+{% block content-header %}
+  {% if user.is_active and user.is_staff %}
+        <div id="user-tools">
+            {% trans 'Welcome,' %}
+            <strong>{% filter force_escape %}{% firstof user.first_name user.username %}{% endfilter %}</strong>.
+            {% block userlinks %}
+                {% url django-admindocs-docroot as docsroot %}
+                {% if docsroot %}
+                    <a href="{{ docsroot }}">{% trans 'Documentation' %}</a> /
+                {% endif %}
+                {% url admin:password_change as password_change_url %}
+                {% if password_change_url %}
+                    <a href="{{ password_change_url }}">
+                {% else %}
+                    <a href="{{ root_path }}password_change/">
+                {% endif %}
+                {% trans 'Change password' %}</a> /
+                {% url admin:logout as logout_url %}
+                {% if logout_url %}
+                    <a href="{{ logout_url }}">
+                {% else %}
+                    <a href="{{ root_path }}logout/">
+                {% endif %}
+                {% trans 'Log out' %}</a>
+            {% endblock %}
+        </div>
+        {% endif %}
+{{ block.super }}   {# comment this out if it conflicts/overlaps with your base site #}
+{% endblock %}
+
+{% block content-body %}
+
+{% comment %}This is a HACK.  Genlib CSS styles are keyed to the
+#content div, and take precedence over django admin styles.  To avoid
+having to duplicate those styles or otherwise fight the CSS
+precedence, close those content divs and put the django admin content
+in an admin-content div that is not affected by those styles.{% endcomment %}
+    </div>  {# close content-area #}
+  </div>    {# close content-inner #}
+</div> 	    {# close content #}
+
+    <!-- Content -->
+    <div id="admin-content">
+        {% block pretitle %}{% endblock %}
+        {% block content_title %}{% if title %}<h1>{{ title }}</h1>{% endif %}{% endblock %}
+        {% block content %}
+        {% block object-tools %}{% endblock %}
+        {{ content }}
+        {% endblock %}
+        {% block sidebar %}{% endblock %}
+        <br class="clear" />
+    </div>
+    <!-- END Content -->
+
+{# re-open equivalent content divs so later template tags close properly #}
+<div> {# content equivalent #}
+  <div> {# content-inner equivalent #}
+    <div>  {# content-area equivalent #}
+{% endblock %}
+
+
+{% block message %}
+  {% block breadcrumbs %}<div class="breadcrumbs"><a href="/">{% trans 'Home' %}</a>{% if title %} &rsaquo; {{ title }}{% endif %}</div>{% endblock %}
+
+  {% if messages %}
+    <ul class="messagelist">{% for message in messages %}
+     <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+   {% endfor %}</ul>
+  {% endif %}
+{% endblock %}
+
+{% block content-outer-bottom %}
+    {% block footer %}<div id="footer"></div>{% endblock %}
+{%endblock%}
