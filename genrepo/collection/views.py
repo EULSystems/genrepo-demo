@@ -15,16 +15,16 @@ from genrepo.collection.forms import CollectionDCEditForm
 from genrepo.collection.models import CollectionObject
 
 @permission_required_with_403('collection.add_collection')
-def create(request):
+def create_collection(request):
     '''Create a new :class:`~genrepo.collection.models.CollectionObject`.
     
     On GET, displays the form. On POST, creates a collection if the
     form is valid.
     '''
-    return _create_or_edit(request)
+    return _create_or_edit_collection(request)
 
 @permission_required_with_403('collection.change_collection')
-def edit(request, pid):
+def edit_collection(request, pid):
     '''Edit an existing
     :class:`~genrepo.collection.models.CollectionObject` identified by
     pid.
@@ -32,9 +32,9 @@ def edit(request, pid):
     On GET, displays the edit form.  On POST, updates the collection
     if the form is valid.
     '''
-    return _create_or_edit(request, pid)
+    return _create_or_edit_collection(request, pid)
 
-def _create_or_edit(request, pid=None):
+def _create_or_edit_collection(request, pid=None):
     """View to create a new
     :class:`~genrepo.collection.models.CollectionObject` or update an
     existing one.
@@ -97,7 +97,7 @@ def _create_or_edit(request, pid=None):
         response.status_code = status_code
     return response
 
-def view(request, pid):
+def view_collection(request, pid):
     '''view an existing
     :class:`~genrepo.collection.models.CollectionObject` identified by
     pid.
@@ -111,15 +111,24 @@ def view(request, pid):
     return render_to_response('collection/view.html',
             {'obj': obj}, context_instance=RequestContext(request))
 
-def list(request):
+def list_collections(request):
     '''list all collections in repository returns list of
     :class:`~genrepo.collection.models.CollectionObject`
     '''
-    # get a list of collections in repo
     colls = CollectionObject.all()
-    # NOTE: suppressing sorting for now;
-    # sorting here might be a good idea, but require handling fedora permission errors
-    #    colls.sort( key=lambda coll : coll.label.upper()) # sort based in label
-        
+    colls = list(_filter_accessible(colls))
+    colls.sort(key=lambda coll: coll.label.upper()) # sort based on label
+
     return render_to_response('collection/list.html',
             {'colls': colls}, context_instance=RequestContext(request))
+
+
+def _filter_accessible(clist):
+    '''Iterate through an input collection list, and yield only those that
+    exist and don't throw Fedora exceptions.'''
+    for coll in clist:
+        try:
+            if coll.exists:
+                yield coll
+        except RequestFailed:
+            pass
