@@ -2,7 +2,7 @@
 
 # all settings in debug section should be false in production environment
 DEBUG = True
-TEMPLATE_DEBUG = DEBUG
+TEMPLATE_DEBUG = False # set to false for fedora_access template tags
 DEV_ENV = True
 
 ADMINS = (
