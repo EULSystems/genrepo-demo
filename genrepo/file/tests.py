@@ -12,16 +12,10 @@ from eulcore.fedora.rdfns import relsext
 
 from genrepo.file.forms import IngestForm
 from genrepo.file.models import FileObject
-
-# users defined in users.json fixture
-ADMIN_CREDENTIALS = {'username': 'repoeditor', 'password': 'r3p03d'} 
-# in repository editor group
-# NOTE: this user should be defined as a test fedora user & be added to the genrepo xacml policy
-NONADMIN_CREDENTIALS = {'username': 'nobody', 'password': 'nobody'}  
-# no permissions
+from genrepo.collection.tests import ADMIN_CREDENTIALS, NONADMIN_CREDENTIALS
 
 class FileViewsTest(EulcoreTestCase):
-    fixtures =  ['users'] # from collection
+    fixtures =  ['users']   # re-using collection users fixture & credentials
 
     repo_admin = Repository(username=getattr(settings, 'FEDORA_TEST_USER', None),
                             password=getattr(settings, 'FEDORA_TEST_PASSWORD', None))
@@ -41,12 +35,51 @@ class FileViewsTest(EulcoreTestCase):
     # ingest
 
     def test_get_ingest_form(self):
+        # not logged in - should redirect to login page
+        response = self.client.get(self.ingest_url)
+        code = response.status_code
+        expected = 302
+        self.assertEqual(code, expected, 'Expected %s but returned %s for %s as AnonymousUser'
+                             % (expected, code, self.ingest_url))
+
+        # logged in as user without required permissions - should 403
+        self.client.login(**NONADMIN_CREDENTIALS)
+        response = self.client.get(self.ingest_url)
+        code = response.status_code
+        expected = 403
+        self.assertEqual(code, expected,
+                         'Expected %s but returned %s for GET %s as logged in non-repo editor'
+                         % (expected, code, self.ingest_url))
+
+        # log in as repository editor 
+        self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
         # on GET, form should be displayed
         response = self.client.get(self.ingest_url)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(isinstance(response.context['form'], IngestForm))
 
     def test_incomplete_ingest_form(self):
+        # not logged in - should redirect to login page
+        response = self.client.post(self.ingest_url)
+        code = response.status_code
+        expected = 302
+        self.assertEqual(code, expected,
+                         'Expected %s but returned %s for POST %s as AnonymousUser'
+                         % (expected, code, self.ingest_url))
+
+        # logged in as user without required permissions - should 403
+        self.client.login(**NONADMIN_CREDENTIALS)
+        response = self.client.post(self.ingest_url)
+        code = response.status_code
+        expected = 403
+        self.assertEqual(code, expected,
+                         'Expected %s but returned %s for POST %s as logged in non-repo editor'
+                         % (expected, code, self.ingest_url))
+
+        # log in as repository editor for normal behavior
+        self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
+
+
         # on POST with incomplete data, should be rejected
         response = self.client.post(self.ingest_url, {
                 'collection': 'info:fedora/example:42',
@@ -55,6 +88,9 @@ class FileViewsTest(EulcoreTestCase):
         self.assertContains(response, 'This field is required')
 
     def test_correct_ingest_form(self):
+        # log in as repository editor for normal behavior
+        self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
+        
         # first find a valid collection
         collections = IngestForm().fields['collection'].choices
         collection_tuple = collections[1] # 0 is blank. 1 is the first non-blank one

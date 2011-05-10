@@ -11,14 +11,19 @@
                     "collection"
                 ], 
                 [
-                    "can_view", 
+                    "change_collection", 
                     "collection", 
                     "collection"
                 ], 
                 [
-                    "change_collection", 
-                    "collection", 
-                    "collection"
+                    "add_file", 
+                    "file", 
+                    "file"
+                ], 
+                [
+                    "change_file", 
+                    "file", 
+                    "file"
                 ]
             ]
         }

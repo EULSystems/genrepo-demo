@@ -10,8 +10,9 @@
         <li><a href="{% url collection:new %}">Create a new collection</a></li>
       {% endif %}
       <li><a href="{% url collection:list %}">Browse existing collections</a></li>
-      {# TODO: ingest permissions check #}
-      <li><a href="{% url file:ingest %}">Ingest a file</a></li>
+      {% if perms.file.add_file %}
+        <li><a href="{% url file:ingest %}">Ingest a file</a></li>
+      {% endif %}
     </ul>
 </div>
 

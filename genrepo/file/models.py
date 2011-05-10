@@ -1,7 +1,19 @@
 from django.conf import settings
+from django.db.models import Model
 from eulcore.fedora import DigitalObject
 from eulcore.fedora.models import FileDatastream
 from genrepo.collection.models import AccessibleObject
+
+
+class File(Model):
+    '''File place-holder object to define Django permissions on
+    :class:`FileObject` . 
+    '''
+    class Meta:
+        permissions = (
+            # add, change, and delete are created by default
+        )
+
 
 class FileObject(DigitalObject):
     '''An opaque file for repositing on behalf of a user. Inherits the
