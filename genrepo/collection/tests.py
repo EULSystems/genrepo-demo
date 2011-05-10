@@ -40,8 +40,6 @@ class CollectionViewsTest(EulcoreTestCase):
 
     def test_create(self):
         # test creating a collection object
-
-        # No login/credentials required for now  (TODO later)
         new_coll_url = reverse('collection:new')
 
         # not logged in - should redirect to login page
