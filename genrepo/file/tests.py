@@ -13,7 +13,16 @@ from eulcore.fedora.rdfns import relsext
 from genrepo.file.forms import IngestForm
 from genrepo.file.models import FileObject
 
+# users defined in users.json fixture
+ADMIN_CREDENTIALS = {'username': 'repoeditor', 'password': 'r3p03d'} 
+# in repository editor group
+# NOTE: this user should be defined as a test fedora user & be added to the genrepo xacml policy
+NONADMIN_CREDENTIALS = {'username': 'nobody', 'password': 'nobody'}  
+# no permissions
+
 class FileViewsTest(EulcoreTestCase):
+    fixtures =  ['users'] # from collection
+
     repo_admin = Repository(username=getattr(settings, 'FEDORA_TEST_USER', None),
                             password=getattr(settings, 'FEDORA_TEST_PASSWORD', None))
 
@@ -50,6 +59,9 @@ class FileViewsTest(EulcoreTestCase):
         collections = IngestForm().fields['collection'].choices
         collection_tuple = collections[1] # 0 is blank. 1 is the first non-blank one
         collection_uri = collection_tuple[0]
+
+        # log in
+        self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
 
         # on POST, ingest object
         with open(self.ingest_fname) as ingest_f:
