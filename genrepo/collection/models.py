@@ -20,7 +20,6 @@ class Collection(Model):
     class Meta:
         permissions = (
             # add, change, and delete are created by default
-            ("can_view", "Can view existing collections"),
         )
 
 
