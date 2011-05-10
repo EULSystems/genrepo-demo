@@ -122,9 +122,15 @@ class FileViewsTest(EulcoreTestCase):
         pid = re.search('<b>(.*)</b>', messages[0]).group(1)
         self.pids.append(pid)
 
+        # inspect the ingested object
         new_obj = self.repo_admin.get_object(pid, type=FileObject)
         self.assertTrue(new_obj.has_requisite_content_models)
         statement = (new_obj.uriref, relsext.isMemberOfCollection, URIRef(collection_uri))
-        self.assertTrue(statement in new_obj.rels_ext.content, msg='RELS-EXT should have collection statement')
+        self.assertTrue(statement in new_obj.rels_ext.content,
+                        msg='RELS-EXT should have collection statement')
+        self.assertEqual('hello.txt', new_obj.label,
+                         msg='filename should be set as preliminary object label')
+        self.assertEqual('hello.txt', new_obj.dc.content.title,
+                         msg='filename should be set as preliminary dc:title')
         with open(self.ingest_fname) as ingest_f:
             self.assertEqual(new_obj.master.content.read(), ingest_f.read())

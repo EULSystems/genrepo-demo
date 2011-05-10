@@ -28,6 +28,8 @@ def ingest_form(request):
                   URIRef(form.cleaned_data['collection']))
             fobj.rels_ext.content.add(st)
             fobj.master.content = request.FILES['file']
+            # pre-populate the object label and dc:title with the uploaded filename
+            fobj.label = fobj.dc.content.title = request.FILES['file'].name
             fobj.save('ingesting user content')
 
             messages.success(request, 'Successfully ingested <b>%s</b>' % (fobj.pid,))
