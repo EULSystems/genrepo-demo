@@ -1,10 +1,10 @@
 # Django settings for genrepo project.
 
-from os import path
+import os
 
 # Get the directory of this file for relative dir paths.
 # Django sets too many absolute paths.
-BASE_DIR = path.dirname(path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 # Site base url, when not deployed at root url (e.g., '/genrepo' )
@@ -12,7 +12,7 @@ SITE_URL_PREFIX = ''
 
 # Absolute path to the directory that holds media.
 # Example: "/home/media/media.lawrence.com/"
-MEDIA_ROOT = path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
@@ -54,7 +54,7 @@ MIDDLEWARE_CLASSES = (
 ROOT_URLCONF = 'genrepo.urls'
 
 TEMPLATE_DIRS = [
-    path.join(BASE_DIR, 'templates'),
+    os.path.join(BASE_DIR, 'templates'),
 ]
 
 # also look for templates in virtualenv

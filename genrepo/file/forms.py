@@ -1,5 +1,4 @@
-from django.db.models import FileField
-from django.forms import Form
+from django.forms import FileField, Form
 
 from eulcore.django.forms.fields import DynamicChoiceField
 
@@ -9,7 +8,7 @@ from genrepo.util import accessible
 def _collection_options():
     collections = list(accessible(CollectionObject.all()))
     options = [('', '')] + \
-        [ ('info:fedora/' + c.pid, c.label)
+        [ ('info:fedora/' + c.pid, c.label or c.pid)
           for c in collections ]
     return options
 

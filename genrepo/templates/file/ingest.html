@@ -1,0 +1,15 @@
+{% extends "site_base.html" %}
+
+{% block page-subtitle %}: Ingest{% endblock %}
+
+{% block content-body %}
+  <h1>Ingest a new item</h1>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <table>
+      {{ form.as_table }}
+    </table>
+    <input type="submit" value="Ingest"/>
+  </form>
+{% endblock %}

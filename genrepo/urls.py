@@ -15,7 +15,9 @@ urlpatterns = patterns('',
     url(r'^accounts/', include('genrepo.accounts.urls', namespace='accounts')),
     # collections
     url(r'^collections/', include('genrepo.collection.urls', namespace='collection')),
-                       
+    # files
+    url(r'^files/', include('genrepo.file.urls', namespace='file')),
+
     # enable django db-admin
     (r'^db-admin/', include(admin.site.urls)),
 )
