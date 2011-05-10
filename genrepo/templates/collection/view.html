@@ -10,4 +10,9 @@
     {% if perms.collection.change_collection %}
        <p><a href="{% url collection:edit obj.pid %}">edit</a></p>
     {% endif %}
+
+    {% if perms.file.add_file %}
+       <p><a href="{% url file:ingest %}?collection={{ obj.uri }}">Add files to this collection</a></p>
+    {% endif %}
+
 {% endblock %}

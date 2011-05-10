@@ -21,6 +21,7 @@ def ingest_form(request):
         if form.is_valid():
             # TODO: set label/dc:title based on filename;
             # set file mimetype in dc:format
+            # TODO: file checksum?
             repo = Repository(request=request)
             fobj = repo.get_object(type=FileObject)
             st = (fobj.uriref, relsext.isMemberOfCollection, 
@@ -32,6 +33,11 @@ def ingest_form(request):
             messages.success(request, 'Successfully ingested <b>%s</b>' % (fobj.pid,))
             return HttpResponseSeeOtherRedirect(reverse('site-index'))
     else:
-        form = IngestForm()
+        initial_data = {}
+        # if collection is specified in url parameters, pre-select the
+        # requested collection on the form via initial data
+        if 'collection' in request.GET:
+            initial_data['collection'] = request.GET['collection']
+        form = IngestForm(initial=initial_data)
     return render_to_response('file/ingest.html', 
         {'form': form}, request=request)

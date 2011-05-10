@@ -58,6 +58,15 @@ class FileViewsTest(EulcoreTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(isinstance(response.context['form'], IngestForm))
 
+        # collection URI passed in via GET should be pre-selected
+        collections = IngestForm().fields['collection'].choices
+        collection_tuple = collections[1] # 0 is blank. 1 is the first non-blank one
+        collection_uri = collection_tuple[0]
+        response = self.client.get(self.ingest_url, {'collection': collection_uri})
+        self.assertEqual(collection_uri, response.context['form'].initial['collection'],
+                         'collection URI specified in GET url parameter should be set as initial value')
+
+
     def test_incomplete_ingest_form(self):
         # not logged in - should redirect to login page
         response = self.client.post(self.ingest_url)
