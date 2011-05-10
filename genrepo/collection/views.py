@@ -63,12 +63,14 @@ def _create_or_edit_collection(request, pid=None):
             try:
                 if obj.exists:
                     action = 'updated'
+                    save_msg = 'updated via genrepo'
                 else:
                     action = 'created new'
+                    save_msg = 'ingested via genrepo'
 
                 # save message must be specified in order for Fedora
                 # to generate & store an ingest audit trail event
-                result = obj.save('ingest via genrepo')
+                result = obj.save(save_msg)
                 messages.success(request,
             		'Successfully %s collection <a href="%s"><b>%s</b></a>' % \
                          (action, reverse('collection:edit', args=[obj.pid]), obj.pid))
