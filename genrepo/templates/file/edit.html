@@ -6,6 +6,7 @@
 
 {% block content-body %}
 <p>Created {{ obj.created }}; last modified {{ obj.modified }}</p>
+<p><a href="{% url file:download obj.pid %}">Download</a></p>
 
 <form method="post">{% csrf_token %}
   <table>
