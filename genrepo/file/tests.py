@@ -27,6 +27,13 @@ class FileViewsTest(EulcoreTestCase):
 
     ingest_url = reverse('file:ingest')
 
+    edit_mgmt_data = {}
+    for field in ['creator', 'contributor', 'coverage', 'relation', 'subject']:
+        edit_mgmt_data['%s_list-MAX_NUM_FORMS' % field] = ''
+        edit_mgmt_data['%s_list-INITIAL_FORMS' % field] = 0
+        edit_mgmt_data['%s_list-TOTAL_FORMS' % field] = 0
+    
+
     def setUp(self):
         self.client = Client()
 
@@ -182,7 +189,9 @@ class FileViewsTest(EulcoreTestCase):
         self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
         
         # POST invalid data (missing required title field)
-        response = self.client.post(self.edit_url, {'creator': 'genrepo'})
+        data = self.edit_mgmt_data.copy()
+        data.update({'descrition': 'test'})
+        response = self.client.post(self.edit_url, data)
         self.assertTrue(isinstance(response.context['form'], DublinCoreEditForm))
         self.assertContains(response, 'This field is required')
 
@@ -207,7 +216,13 @@ class FileViewsTest(EulcoreTestCase):
         self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
 
         # valid form
-        new_data = {'title': 'updated file object', 'description': 'test content', 'creator': 'eul'}
+        new_data = self.edit_mgmt_data.copy()
+        subjects = ['test', 'repositories']
+        new_data.update({'title': 'updated file object', 'description': 'test content',
+                         'creator_list-TOTAL_FORMS': 1, 'creator_list-0-val': 'genrepo',
+                         'subject_list-TOTAL_FORMS': 2, 'subject_list-0-val': subjects[0],
+                         'subject_list-1-val': subjects[1],
+                         })
         response = self.client.post(self.edit_url, new_data, follow=True)
         messages = [ str(msg) for msg in response.context['messages'] ]
         self.assertTrue('Successfully updated' in messages[0])
@@ -215,17 +230,27 @@ class FileViewsTest(EulcoreTestCase):
         # inspect the updated object
         updated_obj = self.repo_admin.get_object(self.obj.pid, type=FileObject)
         self.assertEqual(new_data['title'], updated_obj.label,
-                         msg='posted title should be set as object label')
+            msg='posted title should be set as object label; expected %s, got %s' % \
+                         (new_data['title'], updated_obj.label))
         self.assertEqual(new_data['title'], updated_obj.dc.content.title,
-                         msg='posted title should be set as dc:title')
+            msg='posted title should be set as dc:title; expected %s, got %s' % \
+                         (new_data['title'], updated_obj.dc.content.title))
         self.assertEqual(new_data['description'], updated_obj.dc.content.description,
-                         msg='posted description should be set as dc:description')
-        self.assertEqual(new_data['creator'], updated_obj.dc.content.creator,
-                         msg='posted creator should be set as dc:creator')
+            msg='posted description should be set as dc:description; expected %s, got %s' % \
+                         (new_data['description'], updated_obj.dc.content.description))
+        self.assertEqual(new_data['creator_list-0-val'], updated_obj.dc.content.creator,
+            msg='posted creator should be set as dc:creator; expected %s, got %s' % \
+                         (new_data['creator_list-0-val'], updated_obj.dc.content.creator))
+        self.assertEqual(2, len(updated_obj.dc.content.subject_list),
+            msg='expected 2 subjects after posting 2 subject_list values, got %d' % \
+                         len(updated_obj.dc.content.subject_list))
+        self.assertEqual(subjects, updated_obj.dc.content.subject_list)
+
 
     def test_edit_save_errors(self):
         self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
-        data = {'title': 'foo', 'description': 'bar', 'creator': 'baz'}
+        data = self.edit_mgmt_data.copy()
+        data.update({'title': 'foo', 'description': 'bar', 'creator': 'baz'})
         # simulate fedora errors with mock objects
 	mockrepo = Mock(spec=Repository, name='MockRepository')
         # this actually mocks the class, so return same mock when class is instantiated

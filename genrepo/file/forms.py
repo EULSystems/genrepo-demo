@@ -46,13 +46,14 @@ class DublinCoreEditForm(XmlObjectForm):
     # add a blank value first so there is no default value
     _type_choices.insert(0, (None, '')) 
     type = forms.ChoiceField(choices=_type_choices, required=False)
+    # TODO: possibly make type a repeating field?
 
     class Meta:
         model = DublinCore
-        fields = ['title', 'description', 'creator', 'contributor',
-                  'date', 'coverage', 'language', 'publisher',
-                  'relation', 'rights', 'source', 'subject', 'type',
-                  'format', 'identifier']
+        fields = ['title', 'description', 'creator_list', 'contributor_list',
+                  'date', 'coverage_list', 'language', 'publisher',
+                  'relation_list', 'rights', 'source', 'subject_list', 'type',
+                  'format', 'identifier'] 
         widgets = {
             'description': forms.Textarea,
             'format':  ReadOnlyInput,

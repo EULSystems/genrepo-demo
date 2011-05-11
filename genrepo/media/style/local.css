@@ -13,3 +13,9 @@ input[type='text'], textarea {
 input.readonly {
     border:0px;
 }
+/* make subform headings look like form labels */
+.subform .label {
+    font: bold 1.16667em/14px "Trebuchet MS", Verdana, Arial, Helvetica, sans-serif;
+    color:#3e6280;
+    margin-bottom: 0px;
+}
