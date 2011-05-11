@@ -35,7 +35,8 @@ def ingest_form(request):
             fobj.label = fobj.dc.content.title = request.FILES['file'].name
             fobj.save('ingesting user content')
 
-            messages.success(request, 'Successfully ingested <b>%s</b>' % (fobj.pid,))
+            messages.success(request, 'Successfully ingested <a href="%s"><b>%s</b></a>' % \
+                             (reverse('file:view', args=[fobj.pid]), fobj.pid))
             return HttpResponseSeeOtherRedirect(reverse('site-index'))
     else:
         initial_data = {}
@@ -76,7 +77,7 @@ def edit_metadata(request, pid):
                 result = obj.save('updated metadata')
                 messages.success(request,
             		'Successfully updated <a href="%s"><b>%s</b></a>' % \
-                         (reverse('file:edit', args=[obj.pid]), obj.pid))
+                         (reverse('file:view', args=[obj.pid]), obj.pid))
 
 		# maybe redirect to file view page when we have one
                 return HttpResponseSeeOtherRedirect(reverse('site-index'))
@@ -99,6 +100,13 @@ def edit_metadata(request, pid):
     if status_code is not None:
         response.status_code = status_code
     return response
+
+def view_metadata(request, pid):
+    repo = Repository(request=request)
+    obj = repo.get_object(pid, type=FileObject)
+    # TODO: error handling
+    return render_to_response('file/view.html',
+            {'obj': obj}, request=request)
 
 
 def download_file(request, pid):

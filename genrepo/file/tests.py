@@ -49,6 +49,7 @@ class FileViewsTest(EulcoreTestCase):
             self.obj.save()
         self.edit_url = reverse('file:edit', kwargs={'pid': self.obj.pid})
         self.download_url = reverse('file:download', kwargs={'pid': self.obj.pid})
+        self.view_url = reverse('file:view', kwargs={'pid': self.obj.pid})
 
         self.pids = [self.obj.pid]
 
@@ -306,7 +307,6 @@ class FileViewsTest(EulcoreTestCase):
             self.assert_("You don't have permission to modify this object"
                          in messages[0])
 
-
     def test_download_master(self):
         response = self.client.get(self.download_url)
         code = response.status_code
@@ -321,7 +321,88 @@ class FileViewsTest(EulcoreTestCase):
         with open(self.ingest_fname) as ingest_f:        
             self.assertEqual(ingest_f.read(), response.content,
                 'download response content should be equivalent to file ingested as master datastream')
+            
+        # errors not tested here because they should be handled by eulcore view
 
-                    
+    def test_view_metadata_min(self):
+        # view metadata - minimal fields present
+        response = self.client.get(self.view_url)
+        code = response.status_code
+        expected = 200
+        self.assertEqual(code, expected,
+                         'Expected %s but returned %s for GET %s as AnonymousUser'
+                         % (expected, code, self.view_url))
+        
+        dc = self.obj.dc.content
+        self.assertContains(response, dc.title)
+        self.assertNotContains(response, 'Creator',
+            msg_prefix='metadata view should not include creator when not set in dc')
+        self.assertNotContains(response, 'Contributor',
+            msg_prefix='metadata view should not include contributor when not set in dc')
+        self.assertNotContains(response, 'Coverage:',
+            msg_prefix='metadata view should not include coverage when not set in dc')
+        self.assertNotContains(response, 'Language:',
+            msg_prefix='metadata view should not include language when not set in dc')
+        self.assertNotContains(response, 'Publisher:',
+            msg_prefix='metadata view should not include publisher when not set in dc')
+        self.assertNotContains(response, 'Source',
+            msg_prefix='metadata view should not include source when not set in dc')
+        self.assertNotContains(response, 'Type:',
+            msg_prefix='metadata view should not include type when not set in dc')
+        self.assertNotContains(response, 'Format:',
+            msg_prefix='metadata view should not include format when not set in dc')
+        self.assertContains(response, 'Date:')
+        self.assertContains(response, dc.date)
+
+
+    def test_view_metadata_full(self):        
+        # update test object metadata to test template display with full fields
+        self.obj.dc.content.description =  'Some explanatory text'
+        self.obj.dc.content.creator_list =  ['You', 'Me']
+        self.obj.dc.content.contributor_list =  ['Them']
+        self.obj.dc.content.coverage_list =  ['20th Century', 'Earth']
+        self.obj.dc.content.language =  'English'
+        self.obj.dc.content.publisher =  'EUL'
+        self.obj.dc.content.relation =  'Part of Collection Foo'
+        self.obj.dc.content.source =  'the ether'
+        self.obj.dc.content.subject_list =  ['testing', 'generals', 'repositories']
+        self.obj.dc.content.type =  'Text'
+        self.obj.dc.content.format =  'text/plain'
+        self.obj.dc.content.identifier =  'foo1'
+        self.obj.save('adding DC content to test metadata view')
+        
+        response = self.client.get(self.view_url)
+        code = response.status_code
+        expected = 200
+        self.assertEqual(code, expected,
+                         'Expected %s but returned %s for GET %s as AnonymousUser'
+                         % (expected, code, self.view_url))
+
+        dc = self.obj.dc.content
+        self.assertContains(response, dc.description)
+        self.assertContains(response, 'Creators:')
+        self.assertContains(response, dc.creator_list[0])
+        self.assertContains(response, dc.creator_list[1])
+        self.assertContains(response, 'Contributor:')
+        self.assertContains(response, dc.contributor_list[0])
+        self.assertContains(response, 'Coverage:')
+        self.assertContains(response, dc.coverage_list[0])
+        self.assertContains(response, dc.coverage_list[1])
+        self.assertContains(response, 'Language:')
+        self.assertContains(response, dc.language)
+        self.assertContains(response, 'Publisher:')
+        self.assertContains(response, dc.publisher)
+        self.assertContains(response, 'Source:')
+        self.assertContains(response, dc.source)
+        self.assertContains(response, 'Type:')
+        self.assertContains(response, dc.type)
+        self.assertContains(response, 'Format:')
+        self.assertContains(response, dc.format)
+        self.assertContains(response, 'Date:')
+        self.assertContains(response, dc.date)
+
+    # TODO: test view metadata error handling
+        
+        
 
 
