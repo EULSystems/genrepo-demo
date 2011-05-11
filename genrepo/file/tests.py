@@ -24,9 +24,11 @@ class FileViewsTest(EulcoreTestCase):
                             password=getattr(settings, 'FEDORA_TEST_PASSWORD', None))
 
     ingest_fname = os.path.join(settings.BASE_DIR, 'file', 'fixtures', 'hello.txt')
+    ingest_md5sum = '746308829575e17c3331bbcb00c0898b'   # md5sum of hello.txt 
 
     ingest_url = reverse('file:ingest')
 
+    # required django form management metadata for formsets on DC edit form
     edit_mgmt_data = {}
     for field in ['creator', 'contributor', 'coverage', 'relation', 'subject']:
         edit_mgmt_data['%s_list-MAX_NUM_FORMS' % field] = ''
@@ -38,11 +40,15 @@ class FileViewsTest(EulcoreTestCase):
         self.client = Client()
 
         # create a file object to edit
-        self.obj = self.repo_admin.get_object(type=FileObject)
-        self.obj.dc.content.title =  self.obj.label = 'Test file object'
-        self.obj.dc.content.date =  '2011'
-        self.obj.save()
+        with open(self.ingest_fname) as ingest_f:
+            self.obj = self.repo_admin.get_object(type=FileObject)
+            self.obj.dc.content.title =  self.obj.label = 'Test file object'
+            self.obj.dc.content.date =  '2011'
+            self.obj.master.content = ingest_f
+            self.obj.master.checksum = self.ingest_md5sum
+            self.obj.save()
         self.edit_url = reverse('file:edit', kwargs={'pid': self.obj.pid})
+        self.download_url = reverse('file:download', kwargs={'pid': self.obj.pid})
 
         self.pids = [self.obj.pid]
 
@@ -185,6 +191,7 @@ class FileViewsTest(EulcoreTestCase):
         self.assertContains(response, self.obj.dc.content.date,
                             msg_prefix='edit form should include DC content such as date')
 
+
     def test_edit_invalid_form(self):
         self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
         
@@ -194,6 +201,7 @@ class FileViewsTest(EulcoreTestCase):
         response = self.client.post(self.edit_url, data)
         self.assertTrue(isinstance(response.context['form'], DublinCoreEditForm))
         self.assertContains(response, 'This field is required')
+
 
     def test_edit_valid_form(self):
         # not logged in - should redirect to login page
@@ -296,4 +304,23 @@ class FileViewsTest(EulcoreTestCase):
             messages = [ str(msg) for msg in response.context['messages'] ]
             self.assert_("You don't have permission to modify this object"
                          in messages[0])
+
+
+    def test_download_master(self):
+        response = self.client.get(self.download_url)
+        code = response.status_code
+        expected = 200
+        self.assertEqual(code, expected,
+                         'Expected %s but returned %s for GET %s as AnonymousUser'
+                         % (expected, code, self.edit_url))
+        expected = 'attachment; filename=%s' % self.obj.pid
+        self.assertEqual(response['Content-Disposition'], expected,
+                        "Expected '%s' but returned '%s' for %s content disposition" % \
+                        (expected, response['Content-Type'], self.download_url))
+        with open(self.ingest_fname) as ingest_f:        
+            self.assertEqual(ingest_f.read(), response.content,
+                'download response content should be equivalent to file ingested as master datastream')
+
+                    
+
 

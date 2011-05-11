@@ -4,6 +4,7 @@ from rdflib import URIRef
 
 from eulcore.django.auth.decorators import permission_required_with_403
 from eulcore.django.fedora.server import Repository
+from eulcore.django.fedora.views import raw_datastream
 from eulcore.django.http import HttpResponseSeeOtherRedirect
 from eulcore.fedora.models import DigitalObjectSaveFailure
 from eulcore.fedora.rdfns import relsext
@@ -99,3 +100,15 @@ def edit_metadata(request, pid):
         response.status_code = status_code
     return response
 
+
+def download_file(request, pid):
+    '''Download the master file datastream associated with a
+    :class:`~genrepo.file.models.FileObject`'''
+    repo = Repository(request=request)
+    # FIXME: what should the default download filename be?
+    extra_headers = {
+        'Content-Disposition': "attachment; filename=%s" % (pid)
+    } 
+    # use generic raw datastream view from eulcore
+    return raw_datastream(request, pid, FileObject.master.id, type=FileObject,
+                          repo=repo, headers=extra_headers)
