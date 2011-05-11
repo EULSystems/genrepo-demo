@@ -1,4 +1,5 @@
 import os
+from mock import Mock, patch
 import re
 
 from django.conf import settings
@@ -9,8 +10,10 @@ from rdflib import URIRef
 from eulcore.django.test import TestCase as EulcoreTestCase
 from eulcore.django.fedora import Repository
 from eulcore.fedora.rdfns import relsext
+from eulcore.fedora.util import RequestFailed, PermissionDenied
+from eulcore.xmlmap.dc import DublinCore
 
-from genrepo.file.forms import IngestForm
+from genrepo.file.forms import IngestForm, DublinCoreEditForm
 from genrepo.file.models import FileObject
 from genrepo.collection.tests import ADMIN_CREDENTIALS, NONADMIN_CREDENTIALS
 
@@ -26,7 +29,15 @@ class FileViewsTest(EulcoreTestCase):
 
     def setUp(self):
         self.client = Client()
-        self.pids = []
+
+        # create a file object to edit
+        self.obj = self.repo_admin.get_object(type=FileObject)
+        self.obj.dc.content.title =  self.obj.label = 'Test file object'
+        self.obj.dc.content.date =  '2011'
+        self.obj.save()
+        self.edit_url = reverse('file:edit', kwargs={'pid': self.obj.pid})
+
+        self.pids = [self.obj.pid]
 
     def tearDown(self):
         for pid in self.pids:
@@ -134,3 +145,96 @@ class FileViewsTest(EulcoreTestCase):
                          msg='filename should be set as preliminary dc:title')
         with open(self.ingest_fname) as ingest_f:
             self.assertEqual(new_obj.master.content.read(), ingest_f.read())
+
+
+    # edit metadata
+
+    def test_get_edit_form(self):
+        # log in as repository editor 
+        self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
+        # on GET, form should be displayed with object data pre-populated
+        response = self.client.get(self.edit_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(isinstance(response.context['form'], DublinCoreEditForm))
+        self.assertContains(response, self.obj.label,
+                            msg_prefix='edit form should include object label')
+        self.assertContains(response, self.obj.dc.content.date,
+                            msg_prefix='edit form should include DC content such as date')
+
+    def test_edit_invalid_form(self):
+        self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
+        
+        # POST invalid data (missing required title field)
+        response = self.client.post(self.edit_url, {'creator': 'genrepo'})
+        self.assertTrue(isinstance(response.context['form'], DublinCoreEditForm))
+        self.assertContains(response, 'This field is required')
+
+    def test_edit_valid_form(self):
+        self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
+
+        # valid form
+        new_data = {'title': 'updated file object', 'description': 'test content', 'creator': 'eul'}
+        response = self.client.post(self.edit_url, new_data, follow=True)
+        messages = [ str(msg) for msg in response.context['messages'] ]
+        self.assertTrue('Successfully updated' in messages[0])
+
+        # inspect the updated object
+        updated_obj = self.repo_admin.get_object(self.obj.pid, type=FileObject)
+        self.assertEqual(new_data['title'], updated_obj.label,
+                         msg='posted title should be set as object label')
+        self.assertEqual(new_data['title'], updated_obj.dc.content.title,
+                         msg='posted title should be set as dc:title')
+        self.assertEqual(new_data['description'], updated_obj.dc.content.description,
+                         msg='posted description should be set as dc:description')
+        self.assertEqual(new_data['creator'], updated_obj.dc.content.creator,
+                         msg='posted creator should be set as dc:creator')
+
+    def test_edit_save_errors(self):
+        self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
+        data = {'title': 'foo', 'description': 'bar', 'creator': 'baz'}
+        # simulate fedora errors with mock objects
+	mockrepo = Mock(spec=Repository, name='MockRepository')
+        # this actually mocks the class, so return same mock when class is instantiated
+        mockrepo.return_value = mockrepo
+        # create a Mock object, but use a DublinCore instance for xmlobjectform to inspect
+        testobj = Mock()
+        testobj.dc.content = DublinCore()
+        # Create a RequestFailed exception to simulate Fedora error 
+        # - eulcore.fedora exceptions are initialized from httplib response,
+        #   which can't be instantiated directly; create a mock response
+        err_resp = Mock()
+        err_resp.status = 500
+        err_resp.reason = 'error'
+        err_resp.read.return_value = 'error message'
+        # generate Fedora error on object save
+        testobj.save.side_effect = RequestFailed(err_resp)
+        mockrepo.get_object.return_value = testobj
+
+        # 500 error / request failed
+	with patch('genrepo.file.views.Repository', new=mockrepo):
+            response = self.client.post(self.edit_url, data, follow=True)
+            expected, code = 500, response.status_code
+            self.assertEqual(code, expected,
+            	'Expected %s but returned %s for %s (Fedora 500 error)'
+                % (expected, code, self.edit_url))
+            messages = [ str(msg) for msg in response.context['messages'] ]
+            self.assert_('error communicating with the repository' in messages[0])
+
+        # update the mock object to generate a permission denied error
+        err_resp.status = 401
+        err_resp.reason = 'unauthorized'
+        err_resp.read.return_value = 'denied'
+        # generate Fedora error on object save
+        testobj.save.side_effect = PermissionDenied(err_resp)
+        
+        # 401 error -  permission denied
+	with patch('genrepo.file.views.Repository', new=mockrepo):
+            response = self.client.post(self.edit_url, data, follow=True)
+            expected, code = 401, response.status_code
+            self.assertEqual(code, expected,
+            	'Expected %s but returned %s for %s (Fedora 401 error)'
+                % (expected, code, self.edit_url))
+            messages = [ str(msg) for msg in response.context['messages'] ]
+            self.assert_("You don't have permission to modify this object"
+                         in messages[0])
+

@@ -1,4 +1,4 @@
-from django.forms import FileField, Form, TextInput, Textarea, ChoiceField
+from django import forms #import FileField, Form, TextInput, Textarea, ChoiceField
 
 from eulcore.django.forms.fields import DynamicChoiceField
 from eulcore.django.forms import XmlObjectForm
@@ -14,13 +14,15 @@ def _collection_options():
           for c in collections ]
     return options
 
-class IngestForm(Form):
+class IngestForm(forms.Form):
     """Form to ingest new files into the repository."""
     collection = DynamicChoiceField(choices=_collection_options, required=True,
         help_text="Add the new item to this collection.")
-    file = FileField()
+    file = forms.FileField()
 
-class ReadOnlyInput(TextInput):
+class ReadOnlyInput(forms.TextInput):
+    '''Customized version of :class:`~django.forms.TextInput` to act as
+    a read-only form field.'''
     def __init__(self, *args, **kwargs):
         readonly_attrs = {
             'readonly':'readonly',
@@ -37,11 +39,13 @@ class ReadOnlyInput(TextInput):
 class DublinCoreEditForm(XmlObjectForm):
     """Form to edit Dublin Core metadata for a
     :class:`~genrepo.file.models.FileObject`."""
+    # make title required
+    title = forms.CharField(required=True)
     # configure dc:type as a choice field populated by DCMI type vocabulary
     _type_choices = [(t, t) for t in DublinCore().dcmi_types]
     # add a blank value first so there is no default value
     _type_choices.insert(0, (None, '')) 
-    type = ChoiceField(choices=_type_choices, required=False)
+    type = forms.ChoiceField(choices=_type_choices, required=False)
 
     class Meta:
         model = DublinCore
@@ -50,7 +54,7 @@ class DublinCoreEditForm(XmlObjectForm):
                   'relation', 'rights', 'source', 'subject', 'type',
                   'format', 'identifier']
         widgets = {
-            'description': Textarea,
+            'description': forms.Textarea,
             'format':  ReadOnlyInput,
             'identifier': ReadOnlyInput,
         }
