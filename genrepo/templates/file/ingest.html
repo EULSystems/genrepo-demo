@@ -1,10 +1,9 @@
-{% extends "site_base.html" %}
+{% extends "file/base.html" %}
 
-{% block page-subtitle %}: Ingest{% endblock %}
+{% block page-subtitle %}{{ block.super }} : Ingest{% endblock %}
+{% block content-title %}Ingest a new item{% endblock %}
 
 {% block content-body %}
-  <h1>Ingest a new item</h1>
-
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <table>

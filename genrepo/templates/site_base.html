@@ -21,6 +21,8 @@ GenRepo Prototype
   <li><a href="{% url site-index %}" class="first {% if request %}{% activebase request '^/$' %}{% endif %}">Home</a></li>
   <li><a href="{% url collection:list %}" 
      class="{% if request %}{% activebase request '^/collections/' %}{% endif %}">Collections</a></li>
+  <li><a href="{% url file:ingest %}" 
+     class="{% if request %}{% activebase request '^/files/' %}{% endif %}">Files</a></li>
   {% if user.is_staff %}
     <li><a href="{% url admin:index %}"
            class="{% if request %}{% activebase request '^/db-admin/' %}{% endif %}">Admin</a></li
