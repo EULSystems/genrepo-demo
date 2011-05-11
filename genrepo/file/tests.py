@@ -150,6 +150,23 @@ class FileViewsTest(EulcoreTestCase):
     # edit metadata
 
     def test_get_edit_form(self):
+        # not logged in - should redirect to login page
+        response = self.client.get(self.edit_url)
+        code = response.status_code
+        expected = 302
+        self.assertEqual(code, expected,
+                         'Expected %s but returned %s for GET %s as AnonymousUser'
+                         % (expected, code, self.edit_url))
+
+        # logged in as user without required permissions - should 403
+        self.client.login(**NONADMIN_CREDENTIALS)
+        response = self.client.get(self.edit_url)
+        code = response.status_code
+        expected = 403
+        self.assertEqual(code, expected,
+                         'Expected %s but returned %s for GET %s as logged in non-repo editor'
+                         % (expected, code, self.edit_url))
+
         # log in as repository editor 
         self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
         # on GET, form should be displayed with object data pre-populated
@@ -170,6 +187,23 @@ class FileViewsTest(EulcoreTestCase):
         self.assertContains(response, 'This field is required')
 
     def test_edit_valid_form(self):
+        # not logged in - should redirect to login page
+        response = self.client.post(self.edit_url)
+        code = response.status_code
+        expected = 302
+        self.assertEqual(code, expected,
+                         'Expected %s but returned %s for POST %s as AnonymousUser'
+                         % (expected, code, self.edit_url))
+
+        # logged in as user without required permissions - should 403
+        self.client.login(**NONADMIN_CREDENTIALS)
+        response = self.client.post(self.edit_url)
+        code = response.status_code
+        expected = 403
+        self.assertEqual(code, expected,
+                         'Expected %s but returned %s for POST %s as logged in non-repo editor'
+                         % (expected, code, self.edit_url))
+
         self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
 
         # valid form

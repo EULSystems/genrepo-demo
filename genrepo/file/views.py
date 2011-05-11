@@ -46,6 +46,7 @@ def ingest_form(request):
     return render_to_response('file/ingest.html', 
         {'form': form}, request=request)
 
+@permission_required_with_403('file.change_file')
 def edit_metadata(request, pid):
     """View to edit the metadata for an existing
     :class:`~genrepo.file.models.FileObject` .
