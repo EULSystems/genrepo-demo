@@ -265,6 +265,7 @@ class FileViewsTest(EulcoreTestCase):
         mockrepo.return_value = mockrepo
         # create a Mock object, but use a DublinCore instance for xmlobjectform to inspect
         testobj = Mock()
+        testobj.pid = 'pid:1'	# required for url generation 
         testobj.dc.content = DublinCore()
         # Create a RequestFailed exception to simulate Fedora error 
         # - eulcore.fedora exceptions are initialized from httplib response,
