@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.core.urlresolvers import reverse
+from django.http import Http404
 from rdflib import URIRef
 
 from eulcore.django.auth.decorators import permission_required_with_403
@@ -104,7 +105,10 @@ def edit_metadata(request, pid):
 def view_metadata(request, pid):
     repo = Repository(request=request)
     obj = repo.get_object(pid, type=FileObject)
-    # TODO: error handling
+    # if the object doesn't exist or user doesn't have sufficient
+    # permissions to know that it exists, 404
+    if not obj.exists:
+        raise Http404
     return render_to_response('file/view.html',
             {'obj': obj}, request=request)
 

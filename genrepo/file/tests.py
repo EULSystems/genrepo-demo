@@ -401,7 +401,15 @@ class FileViewsTest(EulcoreTestCase):
         self.assertContains(response, 'Date:')
         self.assertContains(response, dc.date)
 
-    # TODO: test view metadata error handling
+    def test_view_metadata_notfound(self):
+        view_url = reverse('file:view', kwargs={'pid': 'bogus:123'})
+
+        response = self.client.get(view_url)
+        code = response.status_code
+        expected = 404
+        self.assertEqual(code, expected,
+                         'Expected %s but returned %s for GET %s (invalid pid) as AnonymousUser'
+                         % (expected, code, view_url))
         
         
 
