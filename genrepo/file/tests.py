@@ -159,6 +159,10 @@ class FileViewsTest(EulcoreTestCase):
                          msg='filename should be set as preliminary dc:title')
         with open(self.ingest_fname) as ingest_f:
             self.assertEqual(new_obj.master.content.read(), ingest_f.read())
+        # confirm that current site user appears in fedora audit trail
+        xml, uri = new_obj.api.getObjectXML(pid)
+        self.assert_('<audit:responsibility>%s</audit:responsibility>' % \
+                     ADMIN_CREDENTIALS['username'] in xml)
 
 
     # edit metadata
@@ -261,26 +265,21 @@ class FileViewsTest(EulcoreTestCase):
         data = self.edit_mgmt_data.copy()
         data.update({'title': 'foo', 'description': 'bar', 'creator': 'baz'})
         # simulate fedora errors with mock objects
-	mockrepo = Mock(spec=Repository, name='MockRepository')
-        # this actually mocks the class, so return same mock when class is instantiated
-        mockrepo.return_value = mockrepo
+        testobj = Mock(name='MockDigitalObject')
         # create a Mock object, but use a DublinCore instance for xmlobjectform to inspect
-        testobj = Mock()
-        testobj.pid = 'pid:1'	# required for url generation 
         testobj.dc.content = DublinCore()
+        testobj.pid = 'pid:1'	# required for url generation 
         # Create a RequestFailed exception to simulate Fedora error 
-        # - eulcore.fedora exceptions are initialized from httplib response,
-        #   which can't be instantiated directly; create a mock response
+        # - eulcore.fedora wrap around an httplib response
         err_resp = Mock()
         err_resp.status = 500
-        err_resp.reason = 'error'
-        err_resp.read.return_value = 'error message'
+   	err_resp.read.return_value = 'error message'
         # generate Fedora error on object save
         testobj.save.side_effect = RequestFailed(err_resp)
-        mockrepo.get_object.return_value = testobj
 
         # 500 error / request failed
-	with patch('genrepo.file.views.Repository', new=mockrepo):
+        # patch the repository class to return the mock object instead of a real one
+	with patch.object(Repository, 'get_object', new=Mock(return_value=testobj)):            
             response = self.client.post(self.edit_url, data, follow=True)
             expected, code = 500, response.status_code
             self.assertEqual(code, expected,
@@ -291,13 +290,12 @@ class FileViewsTest(EulcoreTestCase):
 
         # update the mock object to generate a permission denied error
         err_resp.status = 401
-        err_resp.reason = 'unauthorized'
         err_resp.read.return_value = 'denied'
         # generate Fedora error on object save
         testobj.save.side_effect = PermissionDenied(err_resp)
         
         # 401 error -  permission denied
-	with patch('genrepo.file.views.Repository', new=mockrepo):
+	with patch.object(Repository, 'get_object', new=Mock(return_value=testobj)):            
             response = self.client.post(self.edit_url, data, follow=True)
             expected, code = 401, response.status_code
             self.assertEqual(code, expected,
