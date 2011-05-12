@@ -14,24 +14,24 @@
 {% with obj.dc.content as dc %}
   {% if dc.description %}<p>{{ dc.description }}</p>{% endif %}
   {% if dc.creator_list %}
-    <p><b>Creator{{ dc.creator_list|length|pluralize }}:</b> {{ dc.creator_list|join:', ' }}</p>
+    <p><b>Creator{{ dc.creator_list|length|pluralize }}:</b> {{ dc.creator_list|join:'; ' }}</p>
   {% endif %}
   {% if dc.contributor_list %}
-    <p><b>Contributor{{ dc.contributor_list|length|pluralize }}:</b> {{ dc.contributor_list|join:', ' }}</p>
+    <p><b>Contributor{{ dc.contributor_list|length|pluralize }}:</b> {{ dc.contributor_list|join:'; ' }}</p>
   {% endif %}
   {% if dc.date %}<p><b>Date:</b> {{ dc.date }}</p>{% endif %}
   {% if dc.coverage_list %}
-    <p><b>Coverage:</b> {{ dc.coverage_list|join:', ' }}</p>
+    <p><b>Coverage:</b> {{ dc.coverage_list|join:'; ' }}</p>
   {% endif %}
   {% if dc.language %}<p><b>Language:</b> {{ dc.language }}</p>{% endif %}
   {% if dc.publisher %}<p><b>Publisher:</b> {{ dc.publisher }}</p>{% endif %}
   {% if dc.relation_list %}
-    <p><b>Relation{{ dc.relation_list|length|pluralize }}::</b> {{ dc.relation_list|join:', ' }}</p>
+    <p><b>Relation{{ dc.relation_list|length|pluralize }}:</b> {{ dc.relation_list|join:'; ' }}</p>
   {% endif %}
   {% if dc.rights %}<p><b>Rights:</b> {{ dc.rights }}</p>{% endif %}
   {% if dc.source %}<p><b>Source:</b> {{ dc.source }}</p>{% endif %}
   {% if dc.subject_list %}
-    <p><b>Subject{{ dc.subject_list|length|pluralize }}:</b> {{ dc.subject_list|join:', ' }}</p>
+    <p><b>Subject{{ dc.subject_list|length|pluralize }}:</b> {{ dc.subject_list|join:'; ' }}</p>
   {% endif %}
   {% if dc.type %}<p><b>Type:</b> {{ dc.type }}</p>{% endif %}
   {% if dc.format %}<p><b>Format:</b> {{ dc.format }}</p>{% endif %}
