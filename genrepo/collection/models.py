@@ -56,6 +56,8 @@ class CollectionObject(DigitalObject):
         members = repo.risearch.get_subjects(relsext.isMemberOfCollection, self.uri)
         # for now, just returning as generic DigitalObject instances
         for pid in members:
+            # TODO: should we restrict to accessible objects only?
+            # (requires passing correct credentials through...)
             yield repo.get_object(pid)
 
     

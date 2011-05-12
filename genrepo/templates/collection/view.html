@@ -10,9 +10,22 @@
     {% if perms.collection.change_collection %}
        <p><a href="{% url collection:edit obj.pid %}">edit</a></p>
     {% endif %}
-
     {% if perms.file.add_file %}
        <p><a href="{% url file:ingest %}?collection={{ obj.uri }}">Add files to this collection</a></p>
     {% endif %}
+    
+    <ul>
+    {% for item in obj.members %}
+      <li>
+        {% fedora_access %}
+          <a href="{% url file:view item.pid %}">{% firstof item.label item.pid %}</a>
+          {% if perms.file.change_file %}
+             <a href="{% url file:edit item.pid %}">edit</a>
+          {% endif %}
+        {% end_fedora_access %}
+      </li>
+    {% endfor %}
+    </ul>
+
 
 {% endblock %}
