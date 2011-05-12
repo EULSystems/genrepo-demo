@@ -9,6 +9,7 @@ from eulcore.django.fedora import Repository
 from eulcore.django.test import TestCase as EulcoreTestCase
 from eulcore.fedora.api import  ApiFacade
 from eulcore.fedora.util import RequestFailed, PermissionDenied
+from eulcore.xmlmap.dc import DublinCore
 
 from genrepo.collection.forms import CollectionDCEditForm
 from genrepo.collection.models import CollectionObject
@@ -109,32 +110,23 @@ class CollectionViewsTest(EulcoreTestCase):
 
         # confirm that current site user appears in fedora audit trail
         xml, uri = new_obj.api.getObjectXML(pid)
-        self.assert_('<audit:responsibility>%s</audit:responsibility>' % ADMIN_CREDENTIALS['username'] in xml)
+        self.assert_('<audit:responsibility>%s</audit:responsibility>' % \
+                     ADMIN_CREDENTIALS['username'] in xml)
 
         # simulate fedora errors with mock objects
-
-	mockrepo = Mock(spec=Repository, name='MockRepository')
-        # this actually mocks the class, so return same mock when class is instantiated
-        mockrepo.return_value = mockrepo
-        # create a mockapi to pass to collection object
-        mockapi = Mock(name='MockApiFacade')
-        # create a test collection object with a mock api
-        # (easier to use an actual collection object since xmlobjectform inspects the fields)
-        testobj = CollectionObject(api=mockapi)
+        testobj = Mock(name='MockDigitalObject')
+        testobj.dc.content = DublinCore()
         # Create a RequestFailed exception to simulate Fedora error 
-        # - eulcore.fedora exceptions are initialized from httplib response,
-        #   which can't be instantiated directly; create a mock response
+        # - eulcore.fedora wrap around an httplib response
         err_resp = Mock()
         err_resp.status = 500
-        err_resp.reason = 'error'
-        err_resp.read.return_value = 'error message'
-        # generate Fedora error on getNextPID (first api call made for a new object)
-        testobj.api.getNextPID.side_effect = RequestFailed(err_resp)
-        # set testobj with mock api to be returned by mockrepo
-        mockrepo.get_object.return_value = testobj
+   	err_resp.read.return_value = 'error message'
+        # generate Fedora error on object save
+        testobj.save.side_effect = RequestFailed(err_resp)
 
         # 500 error / request failed
-	with patch('genrepo.collection.views.Repository', new=mockrepo):
+        # patch the repository class to return the mock object instead of a real one
+	with patch.object(Repository, 'get_object', new=Mock(return_value=testobj)):            
             response = self.client.post(new_coll_url, test_data, follow=True)
             expected, code = 500, response.status_code
             self.assertEqual(code, expected,
@@ -143,15 +135,14 @@ class CollectionViewsTest(EulcoreTestCase):
             messages = [ str(msg) for msg in response.context['messages'] ]
             self.assert_('error communicating with the repository' in messages[0])
 
-        # update the mock api to generate a permission denied error
+        # update the mock error to generate a permission denied error
         err_resp.status = 401
-        err_resp.reason = 'unauthorized'
         err_resp.read.return_value = 'denied'
-        # generate Fedora error on getNextPID (first api call made for new object)
-        testobj.api.getNextPID.side_effect = PermissionDenied(err_resp)
+        # generate Fedora error on object save
+        testobj.save.side_effect = PermissionDenied(err_resp) 
         
         # 401 error -  permission denied
-	with patch('genrepo.collection.views.Repository', new=mockrepo):
+	with patch.object(Repository, 'get_object', new=Mock(return_value=testobj)):            
             response = self.client.post(new_coll_url, test_data, follow=True)
             expected, code = 401, response.status_code
             self.assertEqual(code, expected,
