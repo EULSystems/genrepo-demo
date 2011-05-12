@@ -30,59 +30,82 @@ class CollectionViewsTest(EulcoreTestCase):
     repo_admin = Repository(username=getattr(settings, 'FEDORA_TEST_USER', None),
                             password=getattr(settings, 'FEDORA_TEST_PASSWORD', None))
 
+    new_coll_url = reverse('collection:new')
+    
     def setUp(self):
         self.client = Client()
-        self.pids = []
+        # create test collection object for testing view/edit functionality
+        self.obj = self.repo_admin.get_object(type=CollectionObject)
+        self.obj.label = 'Genrepo test collection'
+        self.obj.dc.content.title = 'my test title'
+        self.obj.dc.content.description = 'this collection contains test content'
+        self.obj.save()
+        self.edit_coll_url = reverse('collection:edit', kwargs={'pid': self.obj.pid})
+        self.view_coll_url = reverse('collection:view', kwargs={'pid': self.obj.pid})
+
+        self.pids = [self.obj.pid]
 
     def tearDown(self):
         # purge any objects created by individual tests
         for pid in self.pids:
             self.repo_admin.purge_object(pid)
 
-    def test_create(self):
-        # test creating a collection object
-        new_coll_url = reverse('collection:new')
+    def test_get_create_form(self):
+        # test creating a collection object 
 
         # not logged in - should redirect to login page
-        response = self.client.get(new_coll_url)
+        response = self.client.get(self.new_coll_url)
         code = response.status_code
         expected = 302
         self.assertEqual(code, expected, 'Expected %s but returned %s for %s as AnonymousUser'
-                             % (expected, code, new_coll_url))
+                             % (expected, code, self.new_coll_url))
 
         # logged in as user without required permissions - should 403
         self.client.login(**NONADMIN_CREDENTIALS)
-        response = self.client.get(new_coll_url)
+        response = self.client.get(self.new_coll_url)
         code = response.status_code
         expected = 403
         self.assertEqual(code, expected, 'Expected %s but returned %s for %s as logged in non-repo editor'
-                             % (expected, code, new_coll_url))
+                             % (expected, code, self.new_coll_url))
 
         # log in as repository editor for all other tests
         # NOTE: using admin view so user credentials will be used to access fedora
         self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
 
         # on GET, form should be displayed
-        response = self.client.get(new_coll_url)
+        response = self.client.get(self.new_coll_url)
         expected, code = 200, response.status_code
         self.assertEqual(code, expected, 'Expected %s but returned %s for %s'
-                             % (expected, code, new_coll_url))
+                             % (expected, code, self.new_coll_url))
         self.assert_(isinstance(response.context['form'], CollectionDCEditForm),
                 "CollectionDCEditForm should be set in response context")
         self.assertContains(response, 'Create a new collection')
 
+    def test_create_invalid(self):
+        # invalid post on collection object create form
+        
+        # log in as repository editor 
+        self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
+
         # test submitting incomplete/invalid data - should redisplay form with errors
         # title is required
         test_data = {'title': '', 'description': 'a new test collection'}
-        response = self.client.post(new_coll_url, test_data)
+        response = self.client.post(self.new_coll_url, test_data)
         self.assert_(isinstance(response.context['form'], CollectionDCEditForm),
                 "CollectionDCEditForm is set in response context when form is POSTed without title")
         self.assertContains(response, 'This field is required', 1,
             msg_prefix='error message for 1 missing required fields')
 
+    def test_create_valid(self):
+        # valid post to create collection object
+
+        # log in as repository editor 
+        self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
+        
         # POST and create new object, verify in fedora
-        test_data['title'] = 'genrepo test collection'
-        response = self.client.post(new_coll_url, test_data, follow=True)
+        test_data = {'title': 'genrepo test collection',
+                     'description': 'my second test collection'}
+        response = self.client.post(self.new_coll_url, test_data, follow=True)
         # on success, should redirect with a message about the object
         messages = [ str(msg) for msg in response.context['messages'] ]
         self.assert_('Successfully created new collection' in messages[0],
@@ -113,7 +136,12 @@ class CollectionViewsTest(EulcoreTestCase):
         self.assert_('<audit:responsibility>%s</audit:responsibility>' % \
                      ADMIN_CREDENTIALS['username'] in xml)
 
+    def test_create_save_errors(self):
         # simulate fedora errors with mock objects
+
+        # log in as repository editor 
+        self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
+        
         testobj = Mock(name='MockDigitalObject')
         testobj.dc.content = DublinCore()
         # Create a RequestFailed exception to simulate Fedora error 
@@ -124,14 +152,17 @@ class CollectionViewsTest(EulcoreTestCase):
         # generate Fedora error on object save
         testobj.save.side_effect = RequestFailed(err_resp)
 
+        # valid form data to post
+        test_data = {'title': 'foo', 'description': 'bar'}
+
         # 500 error / request failed
         # patch the repository class to return the mock object instead of a real one
 	with patch.object(Repository, 'get_object', new=Mock(return_value=testobj)):            
-            response = self.client.post(new_coll_url, test_data, follow=True)
+            response = self.client.post(self.new_coll_url, test_data, follow=True)
             expected, code = 500, response.status_code
             self.assertEqual(code, expected,
             	'Expected %s but returned %s for %s (Fedora 500 error)'
-                % (expected, code, new_coll_url))
+                % (expected, code, self.new_coll_url))
             messages = [ str(msg) for msg in response.context['messages'] ]
             self.assert_('error communicating with the repository' in messages[0])
 
@@ -143,67 +174,60 @@ class CollectionViewsTest(EulcoreTestCase):
         
         # 401 error -  permission denied
 	with patch.object(Repository, 'get_object', new=Mock(return_value=testobj)):            
-            response = self.client.post(new_coll_url, test_data, follow=True)
+            response = self.client.post(self.new_coll_url, test_data, follow=True)
             expected, code = 401, response.status_code
             self.assertEqual(code, expected,
             	'Expected %s but returned %s for %s (Fedora 401 error)'
-                % (expected, code, new_coll_url))
+                % (expected, code, self.new_coll_url))
             messages = [ str(msg) for msg in response.context['messages'] ]
             self.assert_("You don't have permission to create a collection"
                          in messages[0])
 
-    def test_edit(self):
-        # test editing an existing collection
-        obj = self.repo_admin.get_object(type=CollectionObject)
-        obj.label = 'Genrepo test collection'
-        obj.dc.content.title = 'my test title'
-        obj.dc.content.description = 'this collection contains test content'
-        obj.save()
-        # append to list of pids to be cleaned up after the test
-        self.pids.append(obj.pid)
-        
-        edit_coll_url = reverse('collection:edit', kwargs={'pid': obj.pid})
-
+    def test_get_edit_form(self):
         # not logged in - should redirect to login page
-        response = self.client.get(edit_coll_url)
+        response = self.client.get(self.edit_coll_url)
         code = response.status_code
         expected = 302
         self.assertEqual(code, expected, 'Expected %s but returned %s for %s as AnonymousUser'
-                             % (expected, code, edit_coll_url))
+                             % (expected, code, self.edit_coll_url))
 
         # logged in as user without required permissions - should 403
         self.client.post(settings.LOGIN_URL, NONADMIN_CREDENTIALS)
-        response = self.client.get(edit_coll_url)
+        response = self.client.get(self.edit_coll_url)
         code = response.status_code
         expected = 403
         self.assertEqual(code, expected, 'Expected %s but returned %s for %s as logged in non-repo editor'
-                             % (expected, code, edit_coll_url))
+                             % (expected, code, self.edit_coll_url))
 
-        # log in as repository editor for all other tests
+        # log in as repository editor 
         self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
 
         # on GET, form should be displayed
-        response = self.client.get(edit_coll_url)
+        response = self.client.get(self.edit_coll_url)
         expected, code = 200, response.status_code
         self.assertEqual(code, expected, 'Expected %s but returned %s for %s'
-                             % (expected, code, edit_coll_url))
+                             % (expected, code, self.edit_coll_url))
         self.assert_(isinstance(response.context['form'], CollectionDCEditForm),
                 "CollectionDCEditForm should be set in response context")
-        self.assertEqual(response.context['form'].instance, obj.dc.content)
-        self.assertContains(response, 'Update %s' % obj.label)
+        self.assertEqual(response.context['form'].instance, self.obj.dc.content)
+        self.assertContains(response, 'Update %s' % self.obj.label)
+
+    def test_valid_edit_form(self):
+        # log in as repository editor 
+        self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
 
         # POST data and update object, verify in fedora
         update_data = {
             'title': 'new title',
             'description': 'new description too'
         }
-        response = self.client.post(edit_coll_url, update_data, follow=True)
+        response = self.client.post(self.edit_coll_url, update_data, follow=True)
         # on success, should redirect with a message about the object
         messages = [ str(msg) for msg in response.context['messages'] ]
         self.assert_('Successfully updated collection' in messages[0],
                      'successful collection update message displayed to user')
         # get a fresh copy of the object to compare
-        updated_obj = self.repo_admin.get_object(obj.pid, type=CollectionObject)
+        updated_obj = self.repo_admin.get_object(self.obj.pid, type=CollectionObject)
         self.assertEqual(update_data['title'], updated_obj.dc.content.title,
         	"posted title should be set in dc:title; expected '%s', got '%s'" % \
                  (update_data['title'], updated_obj.dc.content.title))
@@ -215,43 +239,34 @@ class CollectionViewsTest(EulcoreTestCase):
                  (update_data['title'], updated_obj.label))
 
     def test_view(self):
-        # test viewing an existing collection
-        obj = self.repo_admin.get_object(type=CollectionObject)
-        obj.label = 'Genrepo test collection'
-        obj.dc.content.title = 'my test title for view'
-        obj.dc.content.description = 'this collection contains test content for view'
-        obj.save()
-        # append to list of pids to be cleaned up after the test
-        self.pids.append(obj.pid)
-
-        view_coll_url = reverse('collection:view', kwargs={'pid': obj.pid})
+        # test viewing an existing collection object
 
         # not logged in - public access content only for now, should
         # be accessible to anyone
-        response = self.client.get(view_coll_url)
+        response = self.client.get(self.view_coll_url)
         code = response.status_code
         expected = 200
         self.assertEqual(code, expected, 'Expected %s but returned %s for %s as AnonymousUser'
-                             % (expected, code, view_coll_url))
+                             % (expected, code, self.view_coll_url))
 
         # logged in as user without required permissions - should still be accessible
         # NOTE: using admin view so user credentials will be used to access fedora
         self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
-        response = self.client.get(view_coll_url)
+        response = self.client.get(self.view_coll_url)
         code = response.status_code
         expected = 200
         self.assertEqual(code, expected, 'Expected %s but returned %s for %s as logged in non-repo editor'
-                             % (expected, code, view_coll_url))
+                             % (expected, code, self.view_coll_url))
 
         # check for object display
         self.assert_(isinstance(response.context['obj'], CollectionObject),
                      'collection object should be set in response context')
-        self.assertEqual(obj.pid, response.context['obj'].pid,
+        self.assertEqual(self.obj.pid, response.context['obj'].pid,
                          'correct collection object should be set in response context')
 
-        self.assertContains(response, obj.label,
+        self.assertContains(response, self.obj.label,
                             msg_prefix='response should include title of collection object')
-        self.assertContains(response, obj.dc.content.description,
+        self.assertContains(response, self.obj.dc.content.description,
                             msg_prefix='response should include description of collection object')
 
         # non-existent object
