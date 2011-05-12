@@ -3,6 +3,7 @@ from django.db.models import Model
 
 from eulcore.django.fedora import Repository
 from eulcore.fedora.models import DigitalObject
+from eulcore.fedora.rdfns import relsext
 
 class AccessibleObject(DigitalObject):
     """A place-holder Fedora Object for auto-generating a PublicAccess
@@ -42,6 +43,20 @@ class CollectionObject(DigitalObject):
         :class:`~genrepo.collection.models.CollectionObject`
         """
         repo = Repository()
-        colls = repo.get_objects_with_cmodel(CollectionObject.COLLECTION_CONTENT_MODEL, type=CollectionObject)
+        colls = repo.get_objects_with_cmodel(CollectionObject.COLLECTION_CONTENT_MODEL,
+                                             type=CollectionObject)
         return colls
+
+    @property
+    def members(self):
+        '''Return all Fedora objects in the repository that are related to the current
+        collection via isMemberOfCollection.'''
+        # FIXME: loses repo permissions/credentials here... 
+        repo = Repository()
+        members = repo.risearch.get_subjects(relsext.isMemberOfCollection, self.uri)
+        # for now, just returning as generic DigitalObject instances
+        for pid in members:
+            yield repo.get_object(pid)
+
+    
 

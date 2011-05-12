@@ -3,11 +3,13 @@ import re
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.test import Client
+from django.test import Client, TestCase
 
 from eulcore.django.fedora import Repository
 from eulcore.django.test import TestCase as EulcoreTestCase
 from eulcore.fedora.api import  ApiFacade
+from eulcore.fedora.models import DigitalObject
+from eulcore.fedora.rdfns import relsext
 from eulcore.fedora.util import RequestFailed, PermissionDenied
 from eulcore.xmlmap.dc import DublinCore
 
@@ -277,4 +279,29 @@ class CollectionViewsTest(EulcoreTestCase):
         expected = 404
         self.assertEqual(code, expected, 'Expected %s but returned %s for %s (nonexistint object)'
                              % (expected, code, view_coll_url))
+
+        
+class CollectionObjectTest(TestCase):
+    'Tests for :mod:`genrepo.collection.models.CollectionObject`'
+    
+    def setUp(self):
+        # use an in-ingested collection object with a mock API for now (until we need more)
+        self.coll = CollectionObject(Mock())
+        
+    def test_members(self):
+        # mock out risearch call
+        member_pids = ['pid:1', 'pid:2']
+        mockri = Mock(name='MockRIsearch')
+        mockri.get_subjects.return_value = member_pids
+        with patch.object(Repository, 'risearch', new=mockri):
+            members = list(self.coll.members)
+            self.assertEqual(len(member_pids), len(members),
+                'collection members length should equal number of items returned by risearch call')
+            self.assert_(isinstance(members[0], DigitalObject),
+                'collection members should be instances of DigitalObject')
+            self.assert_(isinstance(members[1], DigitalObject),
+                'collection members should be instances of DigitalObject')
+            mockri.get_subjects.assert_called_once_with(relsext.isMemberOfCollection,
+                                                        self.coll.uri)
+
         
