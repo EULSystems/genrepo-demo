@@ -250,6 +250,9 @@ class CollectionViewsTest(EulcoreTestCase):
         expected = 200
         self.assertEqual(code, expected, 'Expected %s but returned %s for %s as AnonymousUser'
                              % (expected, code, self.view_coll_url))
+        self.assertNotContains(response, reverse('collection:edit', kwargs={'pid': self.obj.pid}),
+            msg_prefix='collection view should not include edit link for non repo editor')
+
 
         # logged in as user without required permissions - should still be accessible
         # NOTE: using admin view so user credentials will be used to access fedora
@@ -259,6 +262,7 @@ class CollectionViewsTest(EulcoreTestCase):
         expected = 200
         self.assertEqual(code, expected, 'Expected %s but returned %s for %s as logged in non-repo editor'
                              % (expected, code, self.view_coll_url))
+        
 
         # check for object display
         self.assert_(isinstance(response.context['obj'], CollectionObject),
@@ -270,15 +274,65 @@ class CollectionViewsTest(EulcoreTestCase):
                             msg_prefix='response should include title of collection object')
         self.assertContains(response, self.obj.dc.content.description,
                             msg_prefix='response should include description of collection object')
+        self.assertContains(response, reverse('collection:edit', kwargs={'pid': self.obj.pid}),
+            msg_prefix='collection view should include edit link for repo editor')
 
-        # non-existent object
+
+    def test_view_nonexistent(self):
+        # non-existent object should 404
         view_coll_url = reverse('collection:view', kwargs={'pid': 'bogus:nonexistent-pid'})
 
         response = self.client.get(view_coll_url)
         code = response.status_code
         expected = 404
-        self.assertEqual(code, expected, 'Expected %s but returned %s for %s (nonexistint object)'
+        self.assertEqual(code, expected, 'Expected %s but returned %s for %s (nonexistent object)'
                              % (expected, code, view_coll_url))
+
+    def test_view_members(self):
+        # collection view should include brief listing of items that belong to the collection
+        # use mock objects to test collection member view
+        testcoll = Mock(name='MockCollectionObject')
+        testcoll.pid = 'coll:1'
+        file1 = Mock(name='MockDigitalObject')
+        file1.pid = 'file:1'
+        file1.label = 'One Fish'
+        file2 = Mock(name='MockDigitalObject')
+        file2.pid = 'file:2'
+        file2.label = 'Two Fish'
+        testcoll.members = [file1, file2]
+
+        # patch the repository class to return the mock object instead of a real one
+	with patch.object(Repository, 'get_object', new=Mock(return_value=testcoll)):
+            response = self.client.get(self.view_coll_url)
+            code = response.status_code
+            expected = 200
+            self.assertEqual(code, expected,
+                             'Expected %s but returned %s for %s as AnonymousUser'
+                             % (expected, code, self.view_coll_url))
+            
+            # member items should be listed
+            self.assertContains(response, file1.label,
+                msg_prefix='collection view should include first member item label')
+            self.assertContains(response, file2.label,
+                msg_prefix='collection view should include second member item label')
+            self.assertContains(response, reverse('file:view', kwargs={'pid': file1.pid}),
+                msg_prefix='collection view should include link to view first member item')
+            self.assertContains(response, reverse('file:view', kwargs={'pid': file2.pid}),
+                msg_prefix='collection view should include link to view second member item')
+            self.assertNotContains(response, reverse('file:edit', kwargs={'pid': file1.pid}),
+                msg_prefix='collection view should include link to edit first member item (not repo editor)')
+            self.assertNotContains(response, reverse('file:edit', kwargs={'pid': file2.pid}),
+                msg_prefix='collection view should include link to edit second member item (not repo editor)')
+
+        # log in as repo editor - should also see item edit links
+        self.client.post(settings.LOGIN_URL, ADMIN_CREDENTIALS)
+	with patch.object(Repository, 'get_object', new=Mock(return_value=testcoll)):
+            response = self.client.get(self.view_coll_url)
+            self.assertContains(response, reverse('file:edit', kwargs={'pid': file1.pid}),
+                msg_prefix='collection view should include link to edit first member item (repo editor)')
+            self.assertContains(response, reverse('file:edit', kwargs={'pid': file2.pid}),
+                msg_prefix='collection view should include link to edit second member item (repo editor)')
+
 
         
 class CollectionObjectTest(TestCase):
